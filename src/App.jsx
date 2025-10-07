@@ -1,19 +1,22 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Menu from "./Components/Navbar/Menu";
-import Customers from "./Components/Customers/Customers";
-import Products from "./Components/Products/Products";
-import Sales from "./Components/Sales/Sales";
-import CreditNote from "./Components/CreditNote/CreditNote";
-import Users from "./Components/Users/Users";
-import ERPIntegration from "./Components/ERP/ERPIntegeration";
-import About from "./Components/About/About";
-import MainDashboard from "./Components/MainDashboard/MainDashboard";
+import Customers from "./Components/ProtectedRoutes/Customers/Customers";
+import Products from "./Components/ProtectedRoutes/Products/Products";
+import Sales from "./Components/ProtectedRoutes/Sales/Sales";
+import CreditNote from "./Components/ProtectedRoutes/CreditNote/CreditNote";
+import Users from "./Components/ProtectedRoutes/Users/Users";
+import ERPIntegration from "./Components/ProtectedRoutes/ERP/ERPIntegeration";
+import About from "./Components/ProtectedRoutes/About/About";
+import MainDashboard from "./Components/ProtectedRoutes/MainDashboard/MainDashboard";
+import Login from "./Components/Auth/Login";
+import NotFound from "./Components/Auth/NotFound";
+import ProtectedRoutes from "./Components/ProtectedRoutes/ProtectedRoutes"
 export default function App() {
   return (
     <Router>
-      <Menu />
-        <Routes>
-          <Route  path="/" element={<MainDashboard/>}/>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route element={<ProtectedRoutes />}>
+          <Route path="/home" element={<MainDashboard />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/products" element={<Products />} />
           <Route path="/sales" element={<Sales />} />
@@ -21,7 +24,9 @@ export default function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/erp" element={<ERPIntegration />} />
           <Route path="/about" element={<About />} />
-        </Routes>
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </Router>
   );
 }
