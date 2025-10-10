@@ -32,6 +32,7 @@ const MainDashboard = () => {
 
             <div className="salesBreakdown mt-4">
                 <h3 className="py-4">Today Sales Breakdown</h3>
+                <div className="table-responsive">
                 <table className="table table-hover borderClass text-center">
                     <thead>
                         <tr>
@@ -66,6 +67,7 @@ const MainDashboard = () => {
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     )

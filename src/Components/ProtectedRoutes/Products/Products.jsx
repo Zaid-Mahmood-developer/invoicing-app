@@ -10,13 +10,11 @@ const Products = () => {
   const [totalProducts, setTotalProducts] = useState([]);
   const [editMode, setEditMode] = useState([false, null]);
 
-  // ✅ Load products from localStorage on first render
   useEffect(() => {
     const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
     setTotalProducts(storedProducts);
   }, []);
 
-  // ✅ Sync localStorage whenever totalProducts changes
   useEffect(() => {
     localStorage.setItem("products", JSON.stringify(totalProducts));
   }, [totalProducts]);
@@ -46,13 +44,11 @@ const Products = () => {
     validationSchema,
     onSubmit: (values, { resetForm }) => {
       if (editMode[0]) {
-        // ✅ Update specific product
         setTotalProducts((prev) =>
           prev.map((item, index) => (index === editMode[1] ? values : item))
         );
         setEditMode([false, null]);
       } else {
-        // ✅ Add new product
         setTotalProducts((prev) => [...prev, values]);
       }
       resetForm();
@@ -76,7 +72,6 @@ const Products = () => {
       confirmButtonText: "Yes, delete it!",
     }).then((result) => {
       if (result.isConfirmed) {
-        // ✅ Delete specific product
         const filteredProducts = totalProducts.filter((_, index) => index !== id);
         setTotalProducts(filteredProducts);
         Swal.fire("Deleted!", "Your product has been deleted.", "success");
@@ -204,6 +199,7 @@ const Products = () => {
         </form>
       </div>
 
+<div className="table-responsive">
       <table className="table my-4 text-center">
         <thead>
           <tr>
@@ -243,6 +239,7 @@ const Products = () => {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Customers from "./Components/ProtectedRoutes/Customers/Customers";
 import Products from "./Components/ProtectedRoutes/Products/Products";
