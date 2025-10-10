@@ -236,7 +236,7 @@ const Products = () => {
                   className="btn btn-sm btn-danger"
                   onClick={() => deleteProduct(id)}
                 >
-                  <MdDelete /> Delete
+                  <MdDelete /> Delete 
                 </button>
               </td>
             </tr>
