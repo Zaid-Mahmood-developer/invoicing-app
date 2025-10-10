@@ -3,7 +3,7 @@ import * as Yup from "yup";
 export const loginFields = [
         { label: "Username", name: "username", type: "text", value: "", placeholder: "Username" },
         { label: "Email", name: "email", type: "email", value: "", placeholder: "Email" },
-        { label: "Password", name: "password", type: "password", value: "", placeholder: "Password" }
+        { label: "Password", name: "password", type: "password", value: "", placeholder: "Password" , subLabel:"Forgot Password" }
     ]
 
  export const initialValues = loginFields.reduce((acc, field) => {

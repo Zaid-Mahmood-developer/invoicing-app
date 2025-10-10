@@ -9,11 +9,11 @@ export default function Menu() {
   }
   
   return (
-    <nav className="menu-bar d-flex align-items-center w-100">
+    <nav className="menu-bar d-flex align-items-center w-100 pb-4">
       {navMenu.map((item, id) => (
         id === 0 ?
           <div key={id} className="flex-grow-1">
-            <h2><Link onClick={() => activeLinkFunction(id)}  className = {`${activeLink === id && "text-white"} menu-title text-decoration-none`}
+            <h2><Link onClick={() => activeLinkFunction(id)}  className = {` menu-title text-decoration-none`}
             to={item.path}>{item.title}</Link></h2>
           </div>
           :

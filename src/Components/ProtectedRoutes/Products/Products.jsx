@@ -1,222 +1,250 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { IoAddOutline } from "react-icons/io5";
+import { MdModeEdit, MdDelete } from "react-icons/md";
+import { RxUpdate } from "react-icons/rx";
+import Swal from "sweetalert2";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
-export default function Products() {
-  const [products, setProducts] = useState([
-    // sample existing product
-    {
-      hsCode: "8471.3000",
-      description: "Automatic Data Processing Machines",
-      uom: "Numbers",
-      taxType: "Goods at Standard Rates (Default)",
-      qtyInHand: 10,
-    },
-  ]);
+const Products = () => {
+  const [totalProducts, setTotalProducts] = useState([]);
+  const [editMode, setEditMode] = useState([false, null]);
 
-  const [newProduct, setNewProduct] = useState({
-    hsCode: "",
-    description: "",
-    uom: "Numbers",
-    taxType: "Goods at Standard Rates (Default)",
-    qtyInHand: 0,
+  // ✅ Load products from localStorage on first render
+  useEffect(() => {
+    const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+    setTotalProducts(storedProducts);
+  }, []);
+
+  // ✅ Sync localStorage whenever totalProducts changes
+  useEffect(() => {
+    localStorage.setItem("products", JSON.stringify(totalProducts));
+  }, [totalProducts]);
+
+  const validationSchema = Yup.object({
+    hsCode: Yup.string()
+      .matches(/^\d{4}\.\d{4}$/, "HS Code must be in ####.#### format")
+      .required("HS Code is required"),
+    description: Yup.string()
+      .max(60, "Description must be at most 60 characters")
+      .required("Description is required"),
+    uom: Yup.string().required("Unit of Measure is required"),
+    taxType: Yup.string().required("Tax Type is required"),
+    qtyInHand: Yup.number()
+      .moreThan(0, "Quantity must be greater than 0")
+      .required("Quantity is required"),
   });
 
-  // Format HS Code ####.#### automatically
-  const formatHSCode = (value) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 8);
-    return cleaned.replace(/(\d{4})(\d{0,4})/, (_, a, b) =>
-      b ? `${a}.${b}` : a
-    );
-  };
-
-  // Fetch description when HS code changes (debounced)
-  useEffect(() => {
-    const code = newProduct.hsCode;
-    if (code && code.length === 9 && code.includes(".")) {
-      // Example placeholder: fetch from HS/Tariff API
-      const fetchDescription = async () => {
-        try {
-          // This is a placeholder URL — replace with a real API
-          const resp = await fetch(`https://api.example.com/hs/${code}`);
-          if (resp.ok) {
-            const data = await resp.json();
-            // Suppose data.description holds the product description
-            setNewProduct((prev) => ({
-              ...prev,
-              description: data.description || "",
-            }));
-          } else {
-            console.warn("HS description fetch failed:", resp.status);
-          }
-        } catch (err) {
-          console.error("Error fetching HS description:", err);
-        }
-      };
-      fetchDescription();
-    }
-  }, [newProduct.hsCode]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "hsCode") {
-      setNewProduct({ ...newProduct, hsCode: formatHSCode(value) });
-    } else {
-      setNewProduct({ ...newProduct, [name]: value });
-    }
-  };
-
-  const addProduct = () => {
-    if (!newProduct.hsCode) {
-      alert("Please enter HS Code.");
-      return;
-    }
-    if (!newProduct.description) {
-      alert("Please enter or fetch Product Description.");
-      return;
-    }
-    if (newProduct.qtyInHand < 0) {
-      alert("Quantity in hand cannot be negative.");
-      return;
-    }
-
-    setProducts([...products, newProduct]);
-    setNewProduct({
+  const formik = useFormik({
+    initialValues: {
       hsCode: "",
       description: "",
       uom: "Numbers",
       taxType: "Goods at Standard Rates (Default)",
       qtyInHand: 0,
+    },
+    validationSchema,
+    onSubmit: (values, { resetForm }) => {
+      if (editMode[0]) {
+        // ✅ Update specific product
+        setTotalProducts((prev) =>
+          prev.map((item, index) => (index === editMode[1] ? values : item))
+        );
+        setEditMode([false, null]);
+      } else {
+        // ✅ Add new product
+        setTotalProducts((prev) => [...prev, values]);
+      }
+      resetForm();
+    },
+  });
+
+  const editProduct = (id) => {
+    const findProduct = totalProducts.find((_, index) => index === id);
+    formik.setValues(findProduct);
+    setEditMode([true, id]);
+  };
+
+  const deleteProduct = (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Are you sure you want to delete this product?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // ✅ Delete specific product
+        const filteredProducts = totalProducts.filter((_, index) => index !== id);
+        setTotalProducts(filteredProducts);
+        Swal.fire("Deleted!", "Your product has been deleted.", "success");
+      }
     });
   };
 
-  const deleteProduct = (idx) => {
-    if (window.confirm("Delete this product?")) {
-      const arr = products.slice();
-      arr.splice(idx, 1);
-      setProducts(arr);
+  const handleHsCodeChange = (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+
+    if (value.length > 8) {
+      value = value.slice(0, 8);
     }
+
+    if (value.length > 4) {
+      value = value.slice(0, 4) + "." + value.slice(4);
+    }
+
+    formik.setFieldValue("hsCode", value);
   };
 
-  const editProduct = (index) => {
-  // Load the selected product data into the form fields
-  const selectedProduct = products[index];
-
-  setFormData({
-    hsCode: selectedProduct.hsCode,
-    description: selectedProduct.description,
-    uom: selectedProduct.uom,
-    salesTaxType: selectedProduct.salesTaxType,
-    qtyInHand: selectedProduct.qtyInHand,
-  });
-
-  // Enable editing mode
-  setIsEditing(true);
-  setEditIndex(index);
-};
-
-
   return (
-    <div className="container">
-      <h2 className="page-title">📦 Product Management</h2>
-
-      <div className="form-section">
+    <div className="container-fluid p-4 main-dashboard vh-100 ">
+      <div className="form-section w-100">
         <h3>Add / Edit Product</h3>
-        <div className="form-grid">
-          <input
-            type="text"
-            name="hsCode"
-            placeholder="HS Code (####.####)"
-            value={newProduct.hsCode}
-            onChange={handleChange}
-          />
-          <input
-            type="text"
-            name="description"
-            placeholder="Product Description"
-            value={newProduct.description}
-            onChange={handleChange}
-            
-          />
-          <select name="uom" value={newProduct.uom} onChange={handleChange}>
-            <option value="Numbers">Numbers</option>
-            <option value="KG">KG</option>
-            <option value="PKTs">PKTs</option>
-          </select>
-          <select
-            name="taxType"
-            value={newProduct.taxType}
-            onChange={handleChange}
+
+        <form onSubmit={formik.handleSubmit}>
+          <div className="row g-3 mb-3">
+            {/* HS Code */}
+            <div className="col-md-4 col-sm-12">
+              <label className="form-label">HS Code:</label>
+              <input
+                className="form-control"
+                type="text"
+                name="hsCode"
+                placeholder="HS Code (####.####)"
+                value={formik.values.hsCode}
+                onChange={handleHsCodeChange}
+                onBlur={formik.handleBlur}
+              />
+              {formik.touched.hsCode && formik.errors.hsCode && (
+                <div className="text-danger small">{formik.errors.hsCode}</div>
+              )}
+            </div>
+
+            <div className="col-md-4 col-sm-12">
+              <label className="form-label">Product Description:</label>
+              <input
+                className="form-control"
+                type="text"
+                name="description"
+                placeholder="Product Description"
+                value={formik.values.description}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+              {formik.touched.description && formik.errors.description && (
+                <div className="text-danger small">{formik.errors.description}</div>
+              )}
+            </div>
+
+            <div className="col-md-4 col-sm-12">
+              <label className="form-label">Unit of Measure (UoM):</label>
+              <select
+                className="form-select"
+                name="uom"
+                value={formik.values.uom}
+                onChange={formik.handleChange}
+              >
+                <option value="Numbers">Numbers</option>
+                <option value="KG">KG</option>
+                <option value="PKTs">PKTs</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="col-md-6 col-sm-12">
+            <label className="form-label">Tax Type:</label>
+            <select
+              className="form-select"
+              name="taxType"
+              value={formik.values.taxType}
+              onChange={formik.handleChange}
+            >
+              <option value="Goods at Standard Rates (Default)">
+                Goods at Standard Rates (Default)
+              </option>
+              <option value="Goods at Reduced Rates">
+                Goods at Reduced Rates
+              </option>
+              <option value="3rd Schedule Goods">3rd Schedule Goods</option>
+            </select>
+          </div>
+
+          <div className="col-md-6 col-sm-12">
+            <label className="form-label">Quantity in Hand:</label>
+            <input
+              className="form-control"
+              type="number"
+              name="qtyInHand"
+              placeholder="Quantity in Hand"
+              value={formik.values.qtyInHand}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            />
+            {formik.touched.qtyInHand && formik.errors.qtyInHand && (
+              <div className="text-danger small">{formik.errors.qtyInHand}</div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className={`${editMode[0] ? "btn btn-success" : "btn btn-primary"} mt-3`}
           >
-            <option value="Goods at Standard Rates (Default)">
-              Goods at Standard Rates (Default)
-            </option>
-            <option value="Goods at Reduced Rates">
-              Goods at Reduced Rates
-            </option>
-            <option value="3rd Schedule Goods">3rd Schedule Goods</option>
-          </select>
-          <input
-            type="number"
-            name="qtyInHand"
-            placeholder="Quantity in Hand"
-            value={newProduct.qtyInHand}
-            onChange={(e) =>
-              setNewProduct({
-                ...newProduct,
-                qtyInHand: Number(e.target.value),
-              })
-            }
-          />
-        </div>
-
-        <button className="btn" onClick={addProduct}>
-          ➕ Add Product
-        </button>
+            {editMode[0] ? (
+              <>
+                <RxUpdate className="fs-5" /> Update Product
+              </>
+            ) : (
+              <>
+                <IoAddOutline className="fs-4" /> Add Product
+              </>
+            )}
+          </button>
+        </form>
       </div>
 
-      <div className="grid-section">
-        <h3>Existing Products</h3>
-        <table className="data-grid">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>HS Code</th>
-              <th>Description</th>
-              <th>UoM</th>
-              <th>Tax Type</th>
-              <th>Qty In Hand</th>
-              <th>Action</th>
+      <table className="table my-4 text-center">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">HS Code</th>
+            <th scope="col">Product Description</th>
+            <th scope="col">Unit of Measure (UOM)</th>
+            <th scope="col">Tax Type</th>
+            <th scope="col">Quantity in hand</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {totalProducts.map((item, id) => (
+            <tr className="p-4" key={id}>
+              <th scope="row">{id + 1}</th>
+              <td>{item.hsCode}</td>
+              <td>{item.description}</td>
+              <td>{item.uom}</td>
+              <td>{item.taxType}</td>
+              <td>{item.qtyInHand}</td>
+              <td>
+                <button
+                  className="btn btn-sm btn-primary me-2"
+                  onClick={() => editProduct(id)}
+                >
+                  <MdModeEdit /> Edit
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={() => deleteProduct(id)}
+                >
+                  <MdDelete /> Delete
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {products.map((prod, idx) => (
-              <tr key={idx}>
-                <td>{idx + 1}</td>
-                <td>{prod.hsCode}</td>
-                <td>{prod.description}</td>
-                <td>{prod.uom}</td>
-                <td>{prod.taxType}</td>
-                <td>{prod.qtyInHand}</td>
-                <td>
-                  <button
-                    className="btn danger small"
-                    onClick={() => editProduct(idx)}
-                  >
-                    🗑️ Edit
-                  </button>
-                  
-                  
-                  <button
-                    className="btn danger small"
-                    onClick={() => deleteProduct(idx)}
-                  >
-                    🗑️ Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
-}
+};
+
+export default Products;

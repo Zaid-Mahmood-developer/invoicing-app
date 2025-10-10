@@ -1,7 +1,7 @@
 import { Form, Col, Row, Button } from "react-bootstrap";
 import { Formik, Field, Form as FormikForm, ErrorMessage } from "formik";
 import { loginFields , validationSchema , initialValues } from "./dummyUtils";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { submitVals } from "../../redux/Slices/LoginValuesSlice";
 const Login = () => {
@@ -15,10 +15,9 @@ const Login = () => {
     };
 
     return (
-        <div className="mx-auto text-center w-75 align-content-center vh-100">
-            <div className="container-bg p-4 border rounded">
+        <div className="container-bg mx-auto text-center w-50 float-end align-content-center vh-100 container">
+            <div className="p-4 border rounded h-75">
                 <h2 className="my-4">Login Form</h2>
-
                 <Formik
                     initialValues={initialValues}
                     validationSchema={validationSchema}
@@ -39,15 +38,17 @@ const Login = () => {
                                             placeholder={item.placeholder}
                                             isInvalid={touched[item.name] && !!errors[item.name]}
                                         />
+                                   
                                         <Form.Control.Feedback type="invalid">
                                             <ErrorMessage name={item.name} />
                                         </Form.Control.Feedback>
+                                             <Link to={"#"} className="my-2 float-start text-dark">{item.subLabel}</Link>
                                     </Col>
                                 </Form.Group>
                             ))}
 
                             <Button className="w-25" variant="primary" type="submit" >
-                                Submit
+                                Login
                             </Button>
                         </FormikForm>
                     )}
