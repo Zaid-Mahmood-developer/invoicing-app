@@ -8,7 +8,7 @@ export default function MainDashboard() {
 
   const activeLinkFunction = (id) => {
     setActiveLink(id);
-    setIsOpen(false); // close after click on mobile
+    setIsOpen(false);
   };
 
   return (

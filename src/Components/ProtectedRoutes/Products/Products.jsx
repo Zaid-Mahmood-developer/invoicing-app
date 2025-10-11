@@ -94,10 +94,10 @@ const Products = () => {
   };
 
   return (
-    <div className="container-fluid p-4 main-dashboard vh-100 ">
+    <div className="container-fluid p-4 main-dashboard vh-100">
+      <h2 className="page-title mb-2">📦 Product Management</h2>
       <div className="form-section w-100">
-        <h3>Add / Edit Product</h3>
-
+        <h3>{editMode[0] ? "✏️ Edit Product" : "➕ Add Product"}</h3>
         <form onSubmit={formik.handleSubmit}>
           <div className="row g-3 mb-3">
             {/* HS Code */}
@@ -199,46 +199,46 @@ const Products = () => {
         </form>
       </div>
 
-<div className="table-responsive">
-      <table className="table my-4 text-center">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">HS Code</th>
-            <th scope="col">Product Description</th>
-            <th scope="col">Unit of Measure (UOM)</th>
-            <th scope="col">Tax Type</th>
-            <th scope="col">Quantity in hand</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {totalProducts.map((item, id) => (
-            <tr className="p-4" key={id}>
-              <th scope="row">{id + 1}</th>
-              <td>{item.hsCode}</td>
-              <td>{item.description}</td>
-              <td>{item.uom}</td>
-              <td>{item.taxType}</td>
-              <td>{item.qtyInHand}</td>
-              <td>
-                <button
-                  className="btn btn-sm btn-primary me-2"
-                  onClick={() => editProduct(id)}
-                >
-                  <MdModeEdit /> Edit
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={() => deleteProduct(id)}
-                >
-                  <MdDelete /> Delete 
-                </button>
-              </td>
+      <div className="table-responsive">
+        <table className="table my-4 text-center">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">HS Code</th>
+              <th scope="col">Product Description</th>
+              <th scope="col">Unit of Measure (UOM)</th>
+              <th scope="col">Tax Type</th>
+              <th scope="col">Quantity in hand</th>
+              <th scope="col">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {totalProducts.map((item, id) => (
+              <tr className="p-4" key={id}>
+                <th scope="row">{id + 1}</th>
+                <td>{item.hsCode}</td>
+                <td>{item.description}</td>
+                <td>{item.uom}</td>
+                <td>{item.taxType}</td>
+                <td>{item.qtyInHand}</td>
+                <td>
+                  <button
+                    className="btn btn-sm btn-primary me-2"
+                    onClick={() => editProduct(id)}
+                  >
+                    <MdModeEdit /> Edit
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => deleteProduct(id)}
+                  >
+                    <MdDelete /> Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
