@@ -51,7 +51,7 @@ const SalesInvoice = ({ getProductsData, setGetProductsData, onEdit, date, selle
             </tr>
           </thead>
           <tbody>
-            {getProductsData.map((item, id) => (
+            {getProductsData?.map((item, id) => (
               <tr className="p-4" key={id}>
                 <th scope="row">{id + 1}</th>
                 <td>{item?.hsCode}</td>
