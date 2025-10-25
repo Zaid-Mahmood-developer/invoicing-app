@@ -1,542 +1,422 @@
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
+import { useFormik } from "formik";
+import { buyerInfo } from "./dummyUtils";
+import SalesInvoice from "./SalesInvoice";
+import { IoAddOutline } from "react-icons/io5";
+import { RxUpdate } from "react-icons/rx";
+import { validationSchema, initialValues } from "./dummyUtils";
+import Swal from "sweetalert2";
+const TAX_RATE = 0.18;
 const Sales = () => {
-  
-      // 🎤 Voice State
-    const [isListening, setIsListening] = useState(false);
-    const [spokenText, setSpokenText] = useState("");
-    // ✅ Add these at the top, with other useState hooks
-    const [isEditing, setIsEditing] = useState(false);
-    const [editIndex, setEditIndex] = useState(null);
+  const [storedData, setStoredData] = useState([]);
+  const [storeProductDesc, setStoreProductDesc] = useState([]);
+  const [retrieveValues, setRetriveValues] = useState(null);
+  const [retrieveProductValues, setRetriveProductValues] = useState(null);
+  const [getProductsData, setGetProductsData] = useState([]);
+  const [editModeAndProductNameAndCustomerValue, setEditModeAndProductNameAndCustomerValue] = useState({ editMode: false, editProductName: false, customerValue: "" , customerType : ""});
+  const [editIndex, setEditIndex] = useState(null);
+  const [sellerInfoState, setSellerInfoState] = useState(null);
+  const [date, setDate] = useState("");
 
+  const formik = useFormik({
+    initialValues,
+    validationSchema,
+    onSubmit: (values, { resetForm }) => {
+      const beforeTax = values.productQty * values.productPrice;
+      let afterTax = beforeTax + (beforeTax * TAX_RATE);
+      if (retrieveValues?.customertype === "Un-Registered" && values.furtherTax) {
+        values.furtherTax = Number(values.furtherTax)
+        afterTax += (beforeTax * values.furtherTax / 100)
+      }
+      if (editModeAndProductNameAndCustomerValue.editMode && editIndex !== null) {
+        const updated = [...getProductsData];
+        const getRetrieveValues = { ...retrieveValues, ...values };
+        const { hsCode, description, uom, taxType } = retrieveProductValues
+        if (getRetrieveValues.customertype === "Registered") {
+          getRetrieveValues.furtherTax = 0
+        }
+        const combineEditProductValues = {
+          ...getRetrieveValues, hsCode, description, uom, taxType,
+          productValueBeforeTax: beforeTax,
+          productValueAfterTax: afterTax
+        }
+        const isProductHsCodeExisted = getProductsData.find((item) => ((item?.productValue === combineEditProductValues?.productValue) && (item?.hsCode === combineEditProductValues?.hsCode) && (editModeAndProductNameAndCustomerValue.editProductName)));
 
-    // Buyers list
-    const buyers = [
-        {
-            ntn: "1000000000000",
-            businessName: "FERTILIZER MANUFAC IRS NEW",
-            province: "Sindh",
-            address: "Karachi",
-            registrationType: "Registered",
-        },
-        {
-            ntn: "2000000000000",
-            businessName: "ABC TRADERS",
-            province: "Punjab",
-            address: "Lahore",
-            registrationType: "Registered",
-        },
-    ];
-
-    const [invoice, setInvoice] = useState({
-        invoiceType: "Sale Invoice",
-        invoiceDate: "2025-04-21",
-        sellerBusinessName: "Company 8",
-        sellerProvince: "Sindh",
-        sellerAddress: "Karachi",
-        sellerNTNCNIC: "3520265288809",
-        buyerNTNCNIC: "",
-        buyerBusinessName: "",
-        buyerProvince: "",
-        buyerAddress: "",
-        buyerRegistrationType: "",
-        invoiceRefNo: "",
-        scenarioId: "SN001",
-        items: [],
-    });
-
-    const [newItem, setNewItem] = useState({
-        hsCode: "",
-        productDescription: "",
-        rate: "18%",
-        uoM: "Numbers, pieces, units",
-        quantity: 1,
-        totalValues: 0,
-        valueSalesExcludingST: 0,
-        salesTaxApplicable: 18,
-        furtherTax: 0,
-    });
-
-    // 🎤 Voice Recognition
-    const startListening = () => {
-        const recognition = new (window.SpeechRecognition ||
-            window.webkitSpeechRecognition)();
-        recognition.lang = "en-US";
-        recognition.start();
-        setIsListening(true);
-
-        recognition.onresult = (event) => {
-            const text = event.results[0][0].transcript;
-            setSpokenText(text);
-            handleVoiceCommand(text);
+        const isProductValueSame = ((editModeAndProductNameAndCustomerValue.customerValue.productValue === combineEditProductValues.productValue) &&
+          (editModeAndProductNameAndCustomerValue.editProductName));
+        (isProductHsCodeExisted && !isProductValueSame) ?
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Product name and HSS code already existed!",
+          })
+          :
+          updated[editIndex] = combineEditProductValues;
+        setGetProductsData(updated);
+        setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editMode: false }));
+        setEditIndex(null);
+      } else {
+        const combineProductValue = {
+          ...values,
+          ...retrieveValues,
+          productValueBeforeTax: beforeTax,
+          productValueAfterTax: afterTax,
+          ...retrieveProductValues
         };
+        const isProductHsCodeExisted = getProductsData.find((item) => ((item.productValue === combineProductValue.productValue) && (item.hsCode === combineProductValue.hsCode)));
+        isProductHsCodeExisted ?
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Product name and HSS code already existed!",
+          })
+          :
+          setGetProductsData((prev) => [...prev, combineProductValue]);
+      }
+      localStorage.setItem("buyerInfo", JSON.stringify(retrieveValues))
+      resetForm();
+      setRetriveProductValues(null);
+      setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editProductName: false }))
+      // setRetriveValues(null);
+    },
+  });
 
-        recognition.onend = () => setIsListening(false);
-    };
+  const handleEdit = (item, index) => {
+    formik.setValues({
+      customerValue: item.customerValue || "",
+      productValue: item.productValue || "",
+      productQty: item.productQty || "0",
+      productPrice: item.productPrice || "0",
+      furtherTax: item.furtherTax || "0",
+    });
+    setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editMode: true, customerValue: item }));
+    setEditIndex(index);
+    setRetriveProductValues(item);
+  };
 
-    // 🧠 Voice Command
-    const handleVoiceCommand = (text) => {
-        const regex =
-            /invoice to\s+(.+?)\s+for\s+(\d+)\s+(\w+)\s+(?:at|at the rate of)\s+(\d+)/i;
-        const match = text.match(regex);
+  useEffect(() => {
+    const localData = JSON.parse(localStorage.getItem("customers")) || [];
+    const productData = JSON.parse(localStorage.getItem("products")) || [];
+    const sellerValues = JSON.parse(localStorage.getItem("submitValues")) || [];
+    const invoicesData = JSON.parse(localStorage.getItem("invoiceItems")) || [];
+    const today = new Date().toISOString().split("T")[0];
+    setDate(today);
+    setStoredData(localData);
+    setStoreProductDesc(productData);
+    setSellerInfoState(sellerValues)
+    setGetProductsData(invoicesData);
+  }, []);
 
-        if (match) {
-            const buyerName = match[1].trim();
-            const quantity = parseInt(match[2]);
-            const product = match[3].trim();
-            const rate = parseInt(match[4]);
-
-            const selectedBuyer = buyers.find(
-                (b) =>
-                    b.businessName.toLowerCase().includes(buyerName.toLowerCase()) ||
-                    buyerName.toLowerCase().includes(b.businessName.toLowerCase())
-            );
-
-            if (selectedBuyer) {
-                setInvoice((prev) => ({
-                    ...prev,
-                    buyerNTNCNIC: selectedBuyer.ntn,
-                    buyerBusinessName: selectedBuyer.businessName,
-                    buyerProvince: selectedBuyer.province,
-                    buyerAddress: selectedBuyer.address,
-                    buyerRegistrationType: selectedBuyer.registrationType,
-                }));
-            }
-
-            const item = {
-                ...newItem,
-                productDescription: product,
-                quantity,
-                valueSalesExcludingST: rate,
-                salesTaxApplicable: 18,
-            };
-
-            setInvoice((prev) => ({ ...prev, items: [...prev.items, item] }));
-
-            window.alert(
-                `✅ Invoice data captured:\nBuyer: ${buyerName}\nItem: ${product}\nQty: ${quantity}\nRate: ${rate}`
-            );
-        } else {
-            window.alert("⚠️ Could not understand voice command. Try again clearly.");
-        }
-    };
-
-    // 🧾 Buyer select
-    const handleBuyerChange = (e) => {
-        const selected = buyers.find((b) => b.businessName === e.target.value);
-        if (selected) {
-            setInvoice((prev) => ({
-                ...prev,
-                buyerNTNCNIC: selected.ntn,
-                buyerBusinessName: selected.businessName,
-                buyerProvince: selected.province,
-                buyerAddress: selected.address,
-                buyerRegistrationType: selected.registrationType,
-            }));
-        } else {
-            setInvoice((prev) => ({
-                ...prev,
-                buyerNTNCNIC: "",
-                buyerBusinessName: "",
-                buyerProvince: "",
-                buyerAddress: "",
-                buyerRegistrationType: "",
-            }));
-        }
-    };
-
-    // 💡 Format HS Code ####.####
-    const formatHSCode = (value) => {
-        const cleaned = value.replace(/\D/g, "").slice(0, 8);
-        return cleaned.replace(/(\d{4})(\d{0,4})/, (_, a, b) =>
-            b ? `${a}.${b}` : a
-        );
-    };
-
-    // ➕ Add Item
-    const addItem = () => {
-        const qty = Number(newItem.quantity) || 0;
-        const value = Number(newItem.valueSalesExcludingST) || 0;
-        const taxRate = Number(newItem.salesTaxApplicable) || 0;
-        const further = Number(newItem.furtherTax) || 0;
-
-        const base = qty * value;
-        const totalValues = base + (base * (taxRate + further)) / 100;
-
-        const itemToAdd = {
-            ...newItem,
-            hsCode: formatHSCode(newItem.hsCode),
-            quantity: qty,
-            valueSalesExcludingST: value,
-            salesTaxApplicable: taxRate,
-            furtherTax: further,
-            totalValues,
-        };
-
-        setInvoice((prev) => ({ ...prev, items: [...prev.items, itemToAdd] }));
-
-        // reset new item
-        setNewItem({
-            hsCode: "",
-            productDescription: "",
-            rate: "18%",
-            uoM: "Numbers, pieces, units",
-            quantity: 1,
-            totalValues: 0,
-            valueSalesExcludingST: 0,
-            salesTaxApplicable: 18,
-            furtherTax: 0,
-        });
-    };
-
-    // 🧮 Compute Total Amounts
-    const computeItemTotal = (it) => {
-        const qty = Number(it.quantity) || 0;
-        const value = Number(it.valueSalesExcludingST) || 0;
-        const taxRate = Number(it.salesTaxApplicable) || 0;
-        const further = Number(it.furtherTax) || 0;
-
-        const base = qty * value;
-        const taxAmount = (base * taxRate) / 100;
-        const furtherAmount = (base * further) / 100;
-        const grand = base + taxAmount + furtherAmount;
-        return { base, taxAmount, furtherAmount, grand };
-    };
-
-    // 🔁 Reset Invoice
-    const resetInvoice = () => {
-        if (window.confirm("Are you sure you want to reset the invoice?")) {
-            setInvoice({
-                invoiceType: "Sale Invoice",
-                invoiceDate: "2025-04-21",
-                sellerBusinessName: "Company 8",
-                sellerProvince: "Sindh",
-                sellerAddress: "Karachi",
-                sellerNTNCNIC: "3520265288809",
-                buyerNTNCNIC: "",
-                buyerBusinessName: "",
-                buyerProvince: "",
-                buyerAddress: "",
-                buyerRegistrationType: "",
-                invoiceRefNo: "",
-                scenarioId: "SN001",
-                items: [],
-            });
-            setNewItem({
-                hsCode: "",
-                productDescription: "",
-                rate: "18%",
-                uoM: "Numbers, pieces, units",
-                quantity: 1,
-                totalValues: 0,
-                valueSalesExcludingST: 0,
-                salesTaxApplicable: 18,
-                furtherTax: 0,
-            });
-            setSpokenText("");
-            window.alert("🧹 Invoice has been reset successfully!");
-        }
-    };
-
-    const handleSubmit = async () => {
-        const finalInvoice = { ...invoice };
-        if (!finalInvoice.buyerBusinessName) {
-            window.alert("❌ Please select a buyer before submitting.");
-            return;
-        }
-        if (finalInvoice.items.length === 0) {
-            window.alert("❌ Please add at least one item.");
-            return;
-        }
-
-        // Update totals before submitting
-        finalInvoice.items = finalInvoice.items.map((it) => {
-            const { grand } = computeItemTotal(it);
-            return { ...it, totalValues: grand };
-        });
-
-        try {
-            const response = await fetch(
-                "https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: "43fa0084-0b0f-3437-a362-662aa46f89a1",
-                    },
-                    body: JSON.stringify(finalInvoice),
-                }
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                window.alert(
-                    "✅ Invoice submitted successfully!\n\n" +
-                    JSON.stringify(data, null, 2)
-                );
-            } else {
-                const errorText = await response.text();
-                window.alert("❌ Invoice submission failed: " + errorText);
-            }
-        } catch (err) {
-            window.alert("⚠️ Error while submitting: " + err.message);
-        }
-    };
-
-    // 🧾 Calculate grand total for all items
-    const grandTotal = invoice.items.reduce(
-        (sum, it) => sum + computeItemTotal(it).grand,
-        0
-    )
+  useEffect(() => {
+    localStorage.setItem("invoiceItems", JSON.stringify(getProductsData));
+  }, [getProductsData]);
+useEffect(()=>{
+  const registeredCustomers = JSON.parse(localStorage.getItem("customers")) || [];
+  const checkTaxType = registeredCustomers?.find((item)=>(item?.name && item?.customertype) !== (retrieveValues?.name && retrieveValues?.customertype ))
+  console.log(checkTaxType , "cT")
+  if(checkTaxType){
+    setGetProductsData([])
+  }
+}, [retrieveValues?.customertype])
   return (
-        <div className="container">
-            <h1 className="title">🧾 FBR Invoice Integration</h1>
-
-            {/* 🎤 Voice Input */}
-            <div className="voice-section">
-                <button onClick={startListening} className="btn small">
-                    🎙️ {isListening ? "Listening..." : "Speak to Fill Invoice"}
-                </button>
-                {spokenText && <p>You said: {spokenText}</p>}
+    <div className="container-fluid p-4 main-dashboard h-100">
+      <h2 className="page-title mb-2">🧾 FBR Invoice Integration</h2>
+      {/* Seller Info */}
+      <div className="seller-buyer-wrapper">
+        <div className="my-4">
+          <div className="card px-4">
+            <div className="d-flex justify-content-between">
+              <h2 className="my-2">{"Seller Information"}</h2>
+              <input type="date" className="w-25 border-2 rounded-pill px-4 mt-2 borderClass2" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
-
-            {/* Buyer Info */}
-            <div className="seller-buyer-wrapper">
-                <div className="card seller">
-                    <h2>Seller Information</h2>
-                    <p>
-                        <strong>Business:</strong> {invoice.sellerBusinessName}
-                    </p>
-                    <p>
-                        <strong>Province:</strong> {invoice.sellerProvince}
-                    </p>
-                    <p>
-                        <strong>Address:</strong> {invoice.sellerAddress}
-                    </p>
-                </div>
-
-                <div className="card buyer">
-                    <h2>Buyer Information</h2>
-                    <div className="form-inline">
-                        <div className="form-group small-field">
-                            <label>Business Name</label>
-                            <select
-                                value={invoice.buyerBusinessName}
-                                onChange={handleBuyerChange}
-                            >
-                                <option value="">-- Select Buyer --</option>
-                                {buyers.map((b) => (
-                                    <option key={b.ntn} value={b.businessName}>
-                                        {b.businessName}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-group small-field">
-                            <label>NTN / CNIC</label>
-                            <input
-                                type="text"
-                                value={invoice.buyerNTNCNIC}
-                                readOnly
-                            />
-                        </div>
-                        <div className="form-group small-field">
-                            <label>Address</label>
-                            <input
-                                type="text"
-                                value={invoice.buyerAddress}
-                                readOnly
-                            />
-                        </div>
-                        <div className="form-group small-field">
-                            <label>Province</label>
-                            <select
-                                value={invoice.buyerProvince}
-                                onChange={(e) =>
-                                    setInvoice({
-                                        ...invoice,
-                                        buyerProvince: e.target.value,
-                                    })
-                                }
-                            >
-                                <option value="">-- Select Province --</option>
-                                <option value="Khyber Pakhtunkhua">
-                                    Khyber Pakhtunkhua
-                                </option>
-                                <option value="Punjab">Punjab</option>
-                                <option value="Balochistan">Balochistan</option>
-                                <option value="Sind">Sind</option>
-                                <option value="Gilgit Baltistan">
-                                    Gilgit Baltistan
-                                </option>
-                                <option value="FATA">FATA</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+            <div className="d-flex">
+              <div>
+                <p className="w-100 flex-1">
+                  <strong>Business Name</strong>
+                </p>
+                <p className="w-100 flex-1">
+                  <strong>NTN/CNIC</strong>
+                </p>
+                <p className="w-100 flex-1">
+                  <strong>Address</strong>
+                </p>
+                <p className="w-100 flex-1">
+                  <strong>Province</strong>
+                </p>
+              </div>
+              <div>
+                <p className="px-4"><strong>{sellerInfoState?.businessname}</strong></p>
+                <p className="px-4"><strong>{sellerInfoState?.ntncninc}</strong></p>
+                <p className="px-4"><strong>{sellerInfoState?.address}</strong></p>
+                <p className="px-4"><strong>{sellerInfoState?.province}</strong></p>
+              </div>
             </div>
-
-            {/* Add Item */}
-            <div className="card item">
-                <h2>Add Item</h2>
-                <div className="item-form-grid">
-                    <div className="form-group">
-                        <label>HS Code</label>
-                        <input
-                            type="text"
-                            value={newItem.hsCode}
-                            onChange={(e) =>
-                                setNewItem({
-                                    ...newItem,
-                                    hsCode: formatHSCode(e.target.value),
-                                })
-                            }
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Description</label>
-                        <input
-                            type="text"
-                            value={newItem.productDescription}
-                            onChange={(e) =>
-                                setNewItem({
-                                    ...newItem,
-                                    productDescription: e.target.value,
-                                })
-                            }
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Quantity</label>
-                        <input
-                            type="number"
-                            value={newItem.quantity}
-                            onChange={(e) =>
-                                setNewItem({ ...newItem, quantity: e.target.value })
-                            }
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Value (Excl. ST)</label>
-                        <input
-                            type="number"
-                            value={newItem.valueSalesExcludingST}
-                            onChange={(e) =>
-                                setNewItem({
-                                    ...newItem,
-                                    valueSalesExcludingST: e.target.value,
-                                })
-                            }
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Sales Tax (%)</label>
-                        <input
-                            type="number"
-                            value={newItem.salesTaxApplicable}
-                            onChange={(e) =>
-                                setNewItem({
-                                    ...newItem,
-                                    salesTaxApplicable: e.target.value,
-                                })
-                            }
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Further Tax (%)</label>
-                        <input
-                            type="number"
-                            value={newItem.furtherTax}
-                            onChange={(e) =>
-                                setNewItem({ ...newItem, furtherTax: e.target.value })
-                            }
-                        />
-                    </div>
-                </div>
-                <button type="button" className="btn small" onClick={addItem}>
-                    ➕ Add Item
-                </button>
-            </div>
-
-            {/* Items */}
-            {/* Items List */}
-            {/* Items List */}
-            <div className="card">
-                <h2>Invoice Items</h2>
-
-                {invoice.items.length === 0 ? (
-                    <p>No items added yet.</p>
-                ) : (
-                    <>
-                        <ul>
-                            {invoice.items.map((it, index) => {
-                                const qty = Number(it.quantity) || 0;
-                                const value = Number(it.valueSalesExcludingST) || 0;
-                                const st = Number(it.salesTaxApplicable) || 0;
-                                const ft = Number(it.furtherTax) || 0;
-
-                                const base = qty * value;
-                                const total = base + (base * (st + ft)) / 100;
-
-                                return (
-                                    <li key={index}>
-                                        {it.hsCode} | {it.productDescription} — Qty: {qty}
-                                        , Value: {value.toLocaleString()} Rs, ST: {st}%,
-                                        Further: {ft}% →{" "}
-                                        <strong>
-                                            Total: Rs.{" "}
-                                            {total.toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                            })}
-                                        </strong>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-
-                        {/* 🧾 Grand Total */}
-                        <hr />
-                        <h3 style={{ textAlign: "right", marginRight: "20px" }}>
-                            Grand Total:{" "}
-                            <strong
-                                style={{ fontSize: "1.3rem", color: "#007bff" }}
-                            >
-                                Rs.{" "}
-                                {invoice.items
-                                    .reduce((sum, it) => {
-                                        const qty = Number(it.quantity) || 0;
-                                        const value =
-                                            Number(it.valueSalesExcludingST) || 0;
-                                        const st = Number(it.salesTaxApplicable) || 0;
-                                        const ft = Number(it.furtherTax) || 0;
-                                        const base = qty * value;
-                                        const total = base + (base * (st + ft)) / 100;
-                                        return sum + total;
-                                    }, 0)
-                                    .toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                    })}
-                            </strong>
-                        </h3>
-                    </>
-                )}
-            </div>
-
-            <div
-                style={{ display: "flex", gap: "10px", marginTop: "20px" }}
-            >
-                <button className="btn btn-primary" onClick={handleSubmit}>
-                    🚀 Submit Invoice
-                </button>
-
-                <button className="btn btn-danger" onClick={resetInvoice}>
-                    🔁 Reset Invoice
-                </button>
-            </div>
+          </div>
         </div>
-  )
-}
 
-export default Sales
+        {/* Buyer Info */}
+        <div className="my-4">
+          {buyerInfo.map((item, id) => (
+            <div className="card px-4" key={id}>
+              <h2 className="my-2">{item.heading}</h2>
+              {item.type === "dropDown" && (
+                <>
+                  <div className="d-flex align-items-center">
+                    <label className="form-label w-25 fw-bold">
+                      {item.paragraphHeading}
+                    </label>
+                    <select
+                      name="customerValue"
+                      className="form-select p-2"
+                      value={formik.values.customerValue || retrieveValues?.name}
+                      onChange={(e) => {
+                        formik.handleChange(e);
+                        const findCustomer = storedData.find(
+                          (c) => c.name === e.target.value
+                        );
+                        setRetriveValues(findCustomer || null);
+                        formik.setFieldValue("customertype", findCustomer?.customertype || "");
+                      }}
+                      onBlur={formik.handleBlur}
+                    >
+                      <option value="">Select Business Name</option>
+                      {storedData.map((customer, index) => (
+                        <option key={index} value={customer.name}>
+                          {customer.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formik.touched.customerValue &&
+                    formik.errors.customerValue && (
+                      <div className="text-danger text-center">
+                        {formik.errors.customerValue}
+                      </div>
+                    )}
+
+                  {/* Customer details */}
+                  <div className="d-flex align-items-center">
+                    <div className="headingWidth">
+                      <p><strong>NTN/CNIC</strong></p>
+                      <p><strong>Address</strong></p>
+                      <p><strong>Province</strong></p>
+                      <p><strong>Customer Type</strong></p>
+                    </div>
+                    <div className="headingValues my-2">
+                      {retrieveValues ? (
+                        <>
+                          <p><strong>{retrieveValues?.ntnCnic}</strong></p>
+                          <p><strong>{retrieveValues?.address}</strong></p>
+                          <p><strong>{retrieveValues?.province}</strong></p>
+                          <p><strong>{retrieveValues?.customertype}</strong></p>
+                        </>
+                      ) : (
+                        <>
+                          <p><strong>--</strong></p>
+                          <p><strong>--</strong></p>
+                          <p><strong>--</strong></p>
+                          <p><strong>--</strong></p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Add/Edit Item Section */}
+      <div className="my-4">
+        <div className="card p-4">
+          <h2>{editModeAndProductNameAndCustomerValue.editMode ? "Edit Item" : "Add Item"}</h2>
+          <form onSubmit={formik.handleSubmit}>
+            {/* Product Dropdown */}
+            <div className="inputLabelData">
+              <label className="w-25"><strong>Product Name</strong></label>
+              <select
+                name="productValue"
+                className="form-select p-2"
+                value={formik.values.productValue}
+                onChange={(e) => {
+                  formik.handleChange(e);
+                  const findProduct = storeProductDesc.find(
+                    (p) => p.description === e.target.value
+                  );
+                  setRetriveProductValues(findProduct || null);
+                  setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editProductName: true }))
+
+                }}
+                onBlur={formik.handleBlur}
+              >
+                <option value="">Select Product Description</option>
+                {storeProductDesc.map((product, index) => (
+                  <option key={index} value={product.description}>
+                    {product.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {formik.touched.productValue && formik.errors.productValue && (
+              <div className="text-danger text-center">
+                {formik.errors.productValue}
+              </div>
+            )}
+
+            <div className="d-flex">
+              <div className="headingWidth">
+                <p className="m-0 py-2"><strong>HSS Code</strong></p>
+                <p className="m-0 py-2"><strong>UOM</strong></p>
+                <p className="m-0 py-2"><strong>Tax Type</strong></p>
+              </div>
+              <div>
+                {retrieveProductValues ? (
+                  <>
+                    <p className="m-0 py-2"><strong>{retrieveProductValues?.hsCode}</strong></p>
+                    <p className="m-0 py-2"><strong>{retrieveProductValues?.uom}</strong></p>
+                    <p className="m-0 py-2"><strong>{retrieveProductValues?.taxType}</strong></p>
+                  </>
+                ) : (
+                  <>
+                    <p className="m-0 py-2"><strong>--</strong></p>
+                    <p className="m-0 py-2"><strong>--</strong></p>
+                    <p className="m-0 py-2"><strong>--</strong></p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="inputLabelData">
+              <label className="w-25"><strong>Quantity</strong></label>
+              <input
+                type="number"
+                name="productQty"
+                className="form-control my-2"
+                value={formik.values.productQty}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+            </div>
+            {formik.touched.productQty && formik.errors.productQty && (
+              <div className="text-danger text-center">
+                {formik.errors.productQty}
+              </div>
+            )}
+
+            <div className="inputLabelData">
+              <label className="w-25"><strong>Price</strong></label>
+              <input
+                type="number"
+                name="productPrice"
+                className="form-control my-2"
+                value={formik.values.productPrice}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+            </div>
+            {formik.touched.productPrice && formik.errors.productPrice && (
+              <div className="text-danger text-center">
+                {formik.errors.productPrice}
+              </div>
+            )}
+
+            <div className="inputLabelData">
+              <label className="w-25"><strong>Sales Tax</strong></label>
+              <input
+                className="form-control my-2"
+                type="text"
+                value="18%"
+                readOnly
+              />
+            </div>
+
+            {retrieveValues?.customertype === "Un-Registered" && (
+              <>
+                <div className="inputLabelData">
+                  <label className="w-25"><strong>Further Tax</strong></label>
+                  <input
+                    className="form-control my-2"
+                    type="text"
+                    name="furtherTax"
+                    value={formik.values.furtherTax !== "" ? `${formik.values.furtherTax}%` : "0%"}
+                    onChange={(e) => {
+                      const cleanValue = e.target.value.replace("%", "");
+                      if (!isNaN(cleanValue)) {
+                        formik.setFieldValue("furtherTax", cleanValue);
+                      }
+                    }}
+                    onBlur={formik.handleBlur}
+                  />
+                </div>
+                {formik.touched.furtherTax && formik.errors.furtherTax && (
+                  <div className="text-danger text-center">
+                    {formik.errors.furtherTax}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="inputLabelData">
+              <label className="w-25"><strong>Value (Ex-Sales Tax)</strong></label>
+              <input
+                className="form-control my-2"
+                type="number"
+                value={
+                  formik.values.productQty && formik.values.productPrice
+                    ? formik.values.productQty * formik.values.productPrice
+                    : 0
+                }
+                readOnly
+              />
+            </div>
+
+            <div className="inputLabelData">
+              <label className="w-25"><strong>Value (Sales Tax)</strong></label>
+              <input
+                className="form-control my-2"
+                type="number"
+                value={
+                  formik.values.productQty && formik.values.productPrice
+                    ? (
+                      formik.values.productQty *
+                      formik.values.productPrice *
+                      (1 + TAX_RATE) +
+                      (retrieveValues?.customertype === "Un-Registered"
+                        ? (formik.values.productQty * formik.values.productPrice * formik.values.furtherTax) / 100
+                        : 0)
+                    ).toFixed(2)
+                    : 0
+                }
+                readOnly
+              />
+            </div>
+
+            {editModeAndProductNameAndCustomerValue.editMode ? (
+              <button type="submit" className="btn btn-success">
+                <RxUpdate className="fs-4" /> Update Item
+              </button>
+            ) : (
+              <button type="submit" className="btn btn-primary">
+                <IoAddOutline className="fs-4" /> Add Item
+              </button>
+            )}
+
+          </form>
+        </div>
+        {getProductsData?.length > 0 && (
+          <SalesInvoice
+            getProductsData={getProductsData}
+            setGetProductsData={setGetProductsData}
+            onEdit={handleEdit}
+            date={date}
+            sellerInfoState={sellerInfoState}
+            editMode={editModeAndProductNameAndCustomerValue.editMode}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Sales;

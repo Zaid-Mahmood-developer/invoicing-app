@@ -10,12 +10,14 @@ import About from "./Components/ProtectedRoutes/About/About";
 import MainDashboard from "./Components/ProtectedRoutes/MainDashboard/MainDashboard";
 import Login from "./Components/Auth/Login";
 import NotFound from "./Components/Auth/NotFound";
-import ProtectedRoutes from "./Components/ProtectedRoutes/ProtectedRoutes"
+import ProtectedRoutes from "./Components/ProtectedRoutes/ProtectedRoutes";
+import Signup from "./Components/Auth/Signup";
 export default function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Signup/>} />
         <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<MainDashboard />} />
           <Route path="/customers" element={<Customers />} />

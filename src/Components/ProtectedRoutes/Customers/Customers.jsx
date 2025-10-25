@@ -1,82 +1,36 @@
 import { useState, useEffect } from "react";
-import { inputBox, tableHeading } from "./dummyUtils";
+import { inputBox, tableHeading, initialValues, validationSchema } from "./dummyUtils";
 import { IoAddOutline } from "react-icons/io5";
 import { MdModeEdit, MdDelete } from "react-icons/md";
 import { RxUpdate } from "react-icons/rx";
 import Swal from "sweetalert2";
 import { useFormik } from "formik";
-import * as Yup from "yup";
-
-// ✅ Formatter functions
-const formatNTN_CNIC = (value) => {
-  let digits = value.replace(/\D/g, ""); // remove non-digits
-  if (digits.length <= 8) {
-    // NTN format #######-#
-    return digits.replace(/(\d{7})(\d{0,1})/, "$1-$2");
-  } else {
-    // CNIC format #####-#######-#
-    return digits
-      .replace(/(\d{5})(\d{0,7})(\d{0,1}).*/, "$1-$2-$3")
-      .replace(/-$/, ""); // prevent dangling dash
-  }
-};
-
-const formatPhone = (value) => {
-  let digits = value.replace(/\D/g, "");
-  if (!digits.startsWith("92")) {
-    digits = "92" + digits; // enforce +92
-  }
-  return "+92-" + digits.substring(2).replace(/(\d{3})(\d{0,7}).*/, "$1-$2");
-};
 
 export default function Customers() {
   const [totalCustomers, setTotalCustomers] = useState([]);
   const [dynamicProducts, setDynamicProducts] = useState([]);
   const [editMode, setEditMode] = useState([false, null]);
 
-  // ✅ Yup Validation Schema
-  const validationSchema = Yup.object({
-    name: Yup.string()
-      .matches(/^[A-Za-z ]*$/, "Only alphabets and spaces allowed")
-      .max(30, "Maximum 30 characters allowed")
-      .required("Customer name is required"),
-    ntnCnic: Yup.string()
-      .test(
-        "ntn-cnic-format",
-        "Must be a valid NTN (#######-#) or CNIC (#####-#######-#)",
-        (value) => {
-          if (!value) return false;
-          const ntnPattern = /^[0-9]{7}-[0-9]{1}$/;
-          const cnicPattern = /^[0-9]{5}-[0-9]{7}-[0-9]{1}$/;
-          return ntnPattern.test(value) || cnicPattern.test(value);
-        }
-      )
-      .required("NTN or CNIC is required"),
-    address: Yup.string()
-      .matches(/^[A-Za-z0-9\s,.\-\/()]+$/, "Invalid characters in address")
-      .required("Address is required"),
-    contact: Yup.string()
-      .matches(/^\+92-[0-9]{3}-[0-9]{7}$/, "Format must be +92-XXX-XXXXXXX")
-      .required("Contact number is required"),
-    product: Yup.string()
-      .test(
-        "not-default",
-        "Please select a product",
-        (value) =>
-          value !== "Select preferred product" && value !== "" && value !== undefined
-      )
-      .required("Product is required"),
-  });
+  const formatNTN_CNIC = (value) => {
+    let digits = value.replace(/\D/g, "");
+    if (digits.length <= 8) {
+      return digits.replace(/(\d{7})(\d{0,1})/, "$1-$2");
+    } else {
+      return digits
+        .replace(/(\d{5})(\d{0,7})(\d{0,1}).*/, "$1-$2-$3")
+        .replace(/-$/, "");
+    }
+  };
 
-  // ✅ Formik Setup
+  const formatPhone = (value) => {
+    let digits = value.replace(/\D/g, "");
+    if (!digits.startsWith("92")) {
+      digits = "92" + digits;
+    }
+    return "+92-" + digits.substring(2).replace(/(\d{3})(\d{0,7}).*/, "$1-$2");
+  };
   const formik = useFormik({
-    initialValues: {
-      name: "",
-      ntnCnic: "",
-      address: "",
-      contact: "",
-      product: "Select preferred product",
-    },
+    initialValues,
     validationSchema,
     onSubmit: (values, { resetForm }) => {
       if (editMode[0]) {
@@ -109,7 +63,9 @@ export default function Customers() {
     }).then((result) => {
       if (result.isConfirmed) {
         const filteredCustomers = totalCustomers.filter(
-          (_, index) => index !== id
+          (_, index) => {
+            return index !== id
+          }
         );
         setTotalCustomers(filteredCustomers);
         Swal.fire("Deleted!", "Customer has been deleted.", "success");
@@ -120,7 +76,17 @@ export default function Customers() {
   useEffect(() => {
     const products = JSON.parse(localStorage.getItem("products")) || [];
     setDynamicProducts(products);
-  }, []);
+    const storedCustomers = JSON.parse(localStorage.getItem("customers")) || [];
+    setTotalCustomers(storedCustomers);
+  }, [])
+
+  useEffect(() => {
+    if (totalCustomers.length > 0) {
+      localStorage.setItem("customers", JSON.stringify(totalCustomers));
+    } else {
+      localStorage.removeItem("customers")
+    }
+  }, [totalCustomers]);
 
   return (
     <div className="container-fluid p-4 main-dashboard vh-100">
@@ -131,46 +97,45 @@ export default function Customers() {
         <form onSubmit={formik.handleSubmit}>
           <div className="container">
             <div className="row">
-              {inputBox.map((input, id) => (
+              {inputBox.map((input, id) => {
+                console.log(input , "cI")
+              return  (
                 <div key={id} className="col-md-4 col-sm-12">
-                  {input.type === "dropdown" ? (
-                    <div>
+                  {input.type === "dropdown" ? 
+                    (   
+                   <div>
                       <label>{input.label}</label>
                       <select
                         name={input.name}
-                        className={`form-select mb-3 ${
-                          formik.touched.product && formik.errors.product
-                            ? "is-invalid"
-                            : ""
-                        }`}
-                        value={formik.values.product}
+                        className={`form-select mb-3 ${formik.touched[input.name] && formik.errors[input.name] ? "is-invalid" : ""
+                          }`}
+                        value={formik.values[input.name]}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
                       >
-                        <option value="Select preferred product">
-                          Select preferred product
-                        </option>
-                        {dynamicProducts.map((option, idx) => (
+                        <option value={input.placeholder}>{input.placeholder}</option>
+                        {(input.name === "product" ? dynamicProducts.map((option, idx) => (
                           <option key={idx} value={option.description}>
                             {option.description}
                           </option>
-                        ))}
+                        )) : input.options.map((option, idx) => (
+                          <option key={idx} value={option}>
+                            {option}
+                          </option>
+                        )))}
                       </select>
-                      {formik.touched.product && formik.errors.product && (
-                        <div className="invalid-feedback">
-                          {formik.errors.product}
-                        </div>
+                      {formik.touched[input.name] && formik.errors[input.name] && (
+                        <div className="invalid-feedback">{formik.errors[input.name]}</div>
                       )}
                     </div>
-                  ) : input.name === "ntnCnic" ? (
+               ) : input.name === "ntnCnic" ? (
                     <div>
                       <label>{input.label}</label>
                       <input
-                        className={`form-control mb-3 ${
-                          formik.touched.ntnCnic && formik.errors.ntnCnic
-                            ? "is-invalid"
-                            : ""
-                        }`}
+                        className={`form-control mb-3 ${formik.touched.ntnCnic && formik.errors.ntnCnic
+                          ? "is-invalid"
+                          : ""
+                          }`}
                         type="text"
                         name="ntnCnic"
                         placeholder={input.placeholder}
@@ -191,11 +156,10 @@ export default function Customers() {
                     <div>
                       <label>{input.label}</label>
                       <input
-                        className={`form-control mb-3 ${
-                          formik.touched.contact && formik.errors.contact
-                            ? "is-invalid"
-                            : ""
-                        }`}
+                        className={`form-control mb-3 ${formik.touched.contact && formik.errors.contact
+                          ? "is-invalid"
+                          : ""
+                          }`}
                         type="text"
                         name="contact"
                         placeholder={input.placeholder}
@@ -216,12 +180,11 @@ export default function Customers() {
                     <div>
                       <label>{input.label}</label>
                       <input
-                        className={`form-control mb-3 ${
-                          formik.touched[input.name] &&
+                        className={`form-control mb-3 ${formik.touched[input.name] &&
                           formik.errors[input.name]
-                            ? "is-invalid"
-                            : ""
-                        }`}
+                          ? "is-invalid"
+                          : ""
+                          }`}
                         type={input.type}
                         name={input.name}
                         placeholder={input.placeholder}
@@ -236,9 +199,10 @@ export default function Customers() {
                           </div>
                         )}
                     </div>
-                  )}
+                  )
+                  }
                 </div>
-              ))}
+              )})}
             </div>
           </div>
 
@@ -278,6 +242,8 @@ export default function Customers() {
                   <td>{item.address}</td>
                   <td>{item.contact}</td>
                   <td>{item.product}</td>
+                  <td>{item.province}</td>
+                  <td>{item.customertype}</td>
                   <td>
                     <button
                       onClick={() => editCustomerFunc(id)}
