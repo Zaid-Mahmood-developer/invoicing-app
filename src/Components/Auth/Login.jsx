@@ -69,6 +69,11 @@ const Login = () => {
                             <Button className="w-25" variant="primary" type="submit" >
                                 Login
                             </Button>
+
+                            <p>In case of signup</p>
+                            <Link to={"/signup"}>
+                                Signup
+                            </Link>
                         </FormikForm>
                     )}
                 </Formik>
