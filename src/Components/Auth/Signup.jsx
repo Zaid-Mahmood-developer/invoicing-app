@@ -2,21 +2,17 @@ import { Form, Col, Row, Button } from "react-bootstrap";
 import { Formik, Field, Form as FormikForm, ErrorMessage } from "formik";
 import { signupFields, signupInitialValues, signupValidationSchema } from "./dummyUtils";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { submitVals } from "../../redux/Slices/LoginValuesSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const handleSubmit = (values) => {
    localStorage.setItem("submitValues" , JSON.stringify(values))
-    // dispatch(submitVals(values));
     navigate("/");
   };
 
   return (
-    <div className="container-bg mx-auto text-center w-50 float-end align-content-center vh-100 container">
+    <div className="container-bg mx-auto text-center w-50 float-end align-content-center p-4 container">
       <div>
         <h2 className="my-4">Signup Form</h2>
         <Formik
@@ -59,16 +55,12 @@ const Signup = () => {
                         onInput={(e) => {
                           if (item.name === "ntncninc") {
                             let value = e.target.value;
-
-                            // ✅ Allow only digits and limit to 7
                             value = value.replace(/\D/g, "").slice(0, 7);
-
                             setFieldValue(item.name, value);
                           }
                         }}
                         onKeyDown={(e) => {
                           if (item.name === "ntncninc") {
-                            // ✅ Prevent entering non-digit keys except Backspace, Tab, Arrow keys
                             if (
                               !/[0-9]/.test(e.key) &&
                               e.key !== "Backspace" &&

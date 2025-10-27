@@ -32,7 +32,8 @@ export const signupFields = [
     { label: "Email", name: "email", type: "email", placeholder: "Email" },
     { label: "Username", name: "username", type: "text", value: "", placeholder: "Username" },
     { label: "Password", name: "password", type: "password", value: "", placeholder: "Password" },
-    { label: "Confirm Password", name: "confirmpassword", type: "password", value: "", placeholder: "Confirm Password" }
+    { label: "Confirm Password", name: "confirmpassword", type: "password", value: "", placeholder: "Confirm Password" },
+    { label: "Security Code", name: "securitycode", type: "text", value: "", placeholder: "Security Code" }
 ]
 export const signupInitialValues = {
     ntncninc: "",
@@ -43,6 +44,7 @@ export const signupInitialValues = {
     username: "",
     password: "",
     confirmpassword: "",
+    securitycode: ""
 };
 
 // ✅ Validation Schema
@@ -68,15 +70,19 @@ export const signupValidationSchema = Yup.object({
         .required("Address is required"),
 
     username: Yup.string()
-        .max(16, "Maximum 16 characters")
+        .max(16, "Maximum 16 characters are allowed")
         .required("Username is required"),
 
     password: Yup.string()
         .min(6, "Password must be at least 6 characters")
-        .max(16, "Maximum 16 characters")
+        .max(16, "Maximum 16 characters are allowed")
         .required("Password is required"),
 
     confirmpassword: Yup.string()
         .oneOf([Yup.ref("password"), null], "Confirm Password must match with password")
         .required("Confirm password is required"),
+    securitycode: Yup.string()
+        .min(4 , "Minimum 4 characters are allowed")
+        .max(16, "Maximum 16 characters are allowed")
+        .required("Security code is required"),
 });

@@ -73,6 +73,7 @@ const Sales = () => {
           :
           setGetProductsData((prev) => [...prev, combineProductValue]);
       }
+
       localStorage.setItem("buyerInfo", JSON.stringify(retrieveValues))
       resetForm();
       setRetriveProductValues(null);
@@ -113,7 +114,6 @@ const Sales = () => {
 useEffect(()=>{
   const registeredCustomers = JSON.parse(localStorage.getItem("customers")) || [];
   const checkTaxType = registeredCustomers?.find((item)=>(item?.name && item?.customertype) !== (retrieveValues?.name && retrieveValues?.customertype ))
-  console.log(checkTaxType , "cT")
   if(checkTaxType){
     setGetProductsData([])
   }
@@ -130,25 +130,25 @@ useEffect(()=>{
               <input type="date" className="w-25 border-2 rounded-pill px-4 mt-2 borderClass2" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="d-flex">
-              <div>
-                <p className="w-100 flex-1">
+              <div className="headingWidth">
+                <p>
                   <strong>Business Name</strong>
                 </p>
-                <p className="w-100 flex-1">
+                <p>
                   <strong>NTN/CNIC</strong>
                 </p>
-                <p className="w-100 flex-1">
+                <p>
                   <strong>Address</strong>
                 </p>
-                <p className="w-100 flex-1">
+                <p>
                   <strong>Province</strong>
                 </p>
               </div>
               <div>
-                <p className="px-4"><strong>{sellerInfoState?.businessname}</strong></p>
-                <p className="px-4"><strong>{sellerInfoState?.ntncninc}</strong></p>
-                <p className="px-4"><strong>{sellerInfoState?.address}</strong></p>
-                <p className="px-4"><strong>{sellerInfoState?.province}</strong></p>
+                <p><strong>{sellerInfoState?.businessname}</strong></p>
+                <p><strong>{sellerInfoState?.ntncninc}</strong></p>
+                <p><strong>{sellerInfoState?.address}</strong></p>
+                <p><strong>{sellerInfoState?.province}</strong></p>
               </div>
             </div>
           </div>

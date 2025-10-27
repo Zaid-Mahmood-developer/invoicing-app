@@ -1,9 +1,11 @@
 import { MdModeEdit, MdDelete } from "react-icons/md";
-import { useState, useEffect } from "react";
+import { useState, useEffect} from "react";
+
 const SalesInvoice = ({ getProductsData, setGetProductsData, onEdit, date, sellerInfoState, editMode }) => {
+  console.log(getProductsData , "gpdII")
   const [invoiceData, setInvoiceData] = useState(null);
   const [buyerInfo, setBuyerInfo] = useState(null);
-
+  const [grandTotal , setGrandTotal] = useState(0);
   const delInvoiceItem = (id) => {
     const delInvoiceItem = getProductsData.filter((_, index) => index !== id);
     setGetProductsData(delInvoiceItem);
@@ -24,11 +26,16 @@ const SalesInvoice = ({ getProductsData, setGetProductsData, onEdit, date, selle
       ...buyerInfo,
     }))
   }
-
   useEffect(() => {
     const storedBuyerInfo = JSON.parse(localStorage.getItem("buyerInfo"));
     setBuyerInfo(storedBuyerInfo)
   }, [editMode])
+  useEffect(()=>{
+   const grandTotal =  getProductsData.reduce((acc , currVal)=>(
+      acc + currVal?.productValueAfterTax
+   ), 0);
+  setGrandTotal(grandTotal)
+  },[getProductsData])
   return (
     <div className="container-fluid py-4">
       <h2 className="page-title mb-2">Invoice Items</h2>
@@ -83,8 +90,11 @@ const SalesInvoice = ({ getProductsData, setGetProductsData, onEdit, date, selle
           </tbody>
         </table>
       </div>
+      <div className="mb-4">
+        <p className="float-end borderClass2 p-3 fw-bold">Grand Total : {grandTotal}</p>
+      </div>
       <div className="mx-auto text-center">
-        <button onClick={submitInvoice} className="btn btn-primary">Submit Invoice</button>
+        <button onClick={submitInvoice} className="btn btn-primary mt-4">Submit Invoice</button>
       </div>
     </div>
   );
