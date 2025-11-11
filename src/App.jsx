@@ -12,12 +12,18 @@ import Login from "./Components/Auth/Login";
 import NotFound from "./Components/Auth/NotFound";
 import ProtectedRoutes from "./Components/ProtectedRoutes/ProtectedRoutes";
 import Signup from "./Components/Auth/Signup";
+import ForgotPassword from "./Components/Auth/ForgotPassword";
+import ResetPassword from "./Components/Auth/ResetPassword";
+import ChangePassword from "./Components/Auth/ChangePassword";
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} /> 
-        <Route path="/signup" element={<Signup/>} />
+        <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<MainDashboard />} />
           <Route path="/customers" element={<Customers />} />

@@ -17,7 +17,7 @@
 
 /* Header Section Start */
 .menu-bar {
-  padding: 12px 20px;
+  padding: 2rem;
   background-color: var(--header-background-color);
 }
 
@@ -78,3 +78,7 @@
   justify-content: space-between;
   align-items: center;
 }
+
+
+
+

@@ -6,5 +6,5 @@ export const navMenu = [
     { title: "Sales", path: "/sales" },
     { title: "Credit Note", path: "/creditnote" },
     { title: "Users", path: "/users" },
-    { title: "ERP Integration", path: "/erp" },
+    // { title: "ERP Integration", path: "/erp" },
 ]

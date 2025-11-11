@@ -82,7 +82,36 @@ export const signupValidationSchema = Yup.object({
         .oneOf([Yup.ref("password"), null], "Confirm Password must match with password")
         .required("Confirm password is required"),
     securitycode: Yup.string()
-        .min(4 , "Minimum 4 characters are allowed")
-        .max(16, "Maximum 16 characters are allowed")
+        .min(4, "Minimum 4 characters are allowed")
         .required("Security code is required"),
 });
+
+export const forgotPasswordInitialValues = { email: "" };
+
+export const forgotPasswordValidationSchema = Yup.object({
+    email: Yup.string()
+        .email("Invalid email address")
+        .required("Email is required"),
+});
+
+export const resetPasswordInitialValues = { password: "", confirmPassword: "" };
+
+export const resetPasswordValidationSchema = Yup.object({
+    password: Yup.string()
+        .min(6, "Password must be at least 6 characters")
+        .max(16, "Maximum 16 characters are allowed")
+        .required("Password is required"),
+    confirmPassword: Yup.string()
+        .oneOf([Yup.ref("password"), null], "Passwords must match")
+        .required("Confirm Password is required"),
+});
+
+export const changePasswordInitialValues = { oldPassword: "", newPassword: "" };
+export const changePasswordValidationSchema = Yup.object({
+            oldPassword: Yup.string()
+                .required("Old password is required")
+                .min(6, "Password must be at least 6 characters"),
+            newPassword: Yup.string()
+                .required("New password is required")
+                .min(6, "Password must be at least 6 characters"),
+        })

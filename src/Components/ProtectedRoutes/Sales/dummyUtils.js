@@ -21,7 +21,7 @@ export const initialValues = {
 
 export const validationSchema = Yup.object({
   customerValue: Yup.string().when("customertype", {
-    is: (val) => !!val, // if customertype has a value
+    is: (val) => !!val, 
     then: (schema) => schema.required("Buyer name is required"),
     otherwise: (schema) => schema.notRequired(),
   }),
@@ -38,7 +38,7 @@ export const validationSchema = Yup.object({
     .typeError("Further Tax must be a number")
     .min(0, "Further Tax must be greater than or equal to 0")
     .when("customertype", {
-      is: "Un-Registered",
+      is: "Unregistered",
       then: (schema) =>
         schema
           .required("Further Tax is required for Un-Registered customers")

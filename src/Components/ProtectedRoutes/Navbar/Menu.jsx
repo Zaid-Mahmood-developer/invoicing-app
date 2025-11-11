@@ -1,70 +1,145 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { navMenu } from "../Navbar/dummyUtils";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { usePostApi } from "../../../customhooks/usePostApi";
+import { useSelector } from "react-redux";
+import Swal from "sweetalert2";
+import { Navbar, Nav, Container, Dropdown } from "react-bootstrap";
+import Spinner from "../../utils/Spinner/Spinner";
 export default function MainDashboard() {
+  const { refreshToken } = useSelector((state) => state?.submitStore?.loginVal);
+  const logoutUrl = `${import.meta.env.VITE_API_URL}logout`;
+  const { registerUser, data, loading, error } = usePostApi(logoutUrl);
+  const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
-const navigate = useNavigate();
+
   const activeLinkFunction = (id) => {
     setActiveLink(id);
-    setIsOpen(false);
   };
 
-  const logoutBtn = () =>{
-    localStorage.removeItem("loggedValues");
-    localStorage.removeItem("invoiceItems");
-    navigate("/")
-  }
+  // ✅ Logout logic
+  const logoutBtn = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to log out?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, logout",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await registerUser({}, { Authorization: `Bearer ${refreshToken}` });
+
+        Swal.fire({
+          icon: "success",
+          title: "Logged out",
+          text: "You have been logged out successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
+        localStorage.removeItem("loggedValues");
+        localStorage.removeItem("invoiceItems");
+        navigate("/");
+      } catch (err) {
+        Swal.fire({
+          icon: "error",
+          title: "Logout failed",
+          text: error?.message || "Something went wrong while logging out.",
+        });
+      }
+    }
+  };
+
+  const handleChangePassword = () => {
+    navigate("/change-password");
+  };
 
   return (
-    <nav className="navbar navbar-expand-md menu-bar w-100 pb-4">
-      <div className="container-fluid">
-
-        {/* Brand */}
-        <div className="flex-grow-1">
-          <div className="m-0">
-            <Link
-              onClick={() => activeLinkFunction(0)}
-              className="menu-title text-decoration-none"
-              to={navMenu[0].path}
-            >
-              {navMenu[0].title}
-            </Link>
-          </div>
-
-        </div>
-
-        {/* Hamburger button (only visible < md) */}
-        <button
-          className="navbar-toggler ms-auto"
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
+    <Navbar
+      expand="md"
+      className="menu-bar shadow-sm"
+      sticky="top"
+    >
+      <Container fluid className="d-flex align-items-center justify-content-between">
+        {/* Brand Title */}
+        <Navbar.Brand
+          as={Link}
+          to={navMenu[0].path}
+          onClick={() => activeLinkFunction(0)}
+          className="menu-title fw-semibold text-decoration-none"
         >
-          <span className="navbar-toggler-icon"></span>
-        </button>
+          {navMenu[0].title}
+        </Navbar.Brand>
 
-        {/* Collapsible menu */}
-        <div className={`collapse navbar-collapse ${isOpen ? "show" : ""}`}>
-          <ul className="navbar-nav ms-auto">
+        {/* Hamburger Toggle */}
+        <Navbar.Toggle
+          aria-controls="main-navbar"
+          className="border-0"
+          style={{ backgroundColor: "var(--borderOuter-color)" }}
+        />
+
+        {/* Collapsible Menu */}
+        <Navbar.Collapse id="main-navbar">
+          <Nav className="ms-auto align-items-center p-2">
+            {/* Nav Links */}
             {navMenu.slice(1).map((item, id) => (
-              <li key={id + 1} className="nav-item px-3 py-2">
-                <Link
-                  onClick={() => activeLinkFunction(id + 1)}
-                  className={`nav-link menu-title fs-6 ${activeLink === id + 1 ? "menu-active-color" : ""
-                    }`}
-                  to={item.path}
-                >
-                  {item.title}
-                </Link>
-              </li>
+              <Nav.Link
+                as={Link}
+                key={id + 1}
+                to={item.path}
+                onClick={() => activeLinkFunction(id + 1)}
+                className={`menu-title mx-2 ${activeLink === id + 1 ? "menu-active-color fw-semibold" : ""
+                  }`}
+              >
+                {item.title}
+              </Nav.Link>
             ))}
-          </ul>
-          <div className="d-flex justify-content-between align-items-center">
-            <button onClick={logoutBtn} className="borderClass2 mb-0 px-4 py-2">Logout </button>
-          </div>
-        </div>
-      </div>
-    </nav>
+
+            {/* Dropdown Menu */}
+            <Dropdown align="end" className="ms-md-3 mt-2 mt-md-0">
+              <Dropdown.Toggle
+                id="dropdown-basic"
+                className="borderClass2 text-dark fw-semibold px-3 py-1"
+                style={{
+                  border: "none",
+                  backgroundColor: "var(--borderOuter-color)",
+                }}
+              >
+                Account
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu className="shadow border-0 mt-2">
+                <Dropdown.Item
+                  onClick={handleChangePassword}
+                  className="text-dark fw-semibold"
+                >
+                  Change Password
+                </Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item
+                  onClick={logoutBtn}
+                  disabled={loading}
+                  className="text-danger fw-semibold"
+                >
+                  {loading ? (
+                    <>
+                      {/* <Spinner animation="border" size="sm" className="me-2" />
+                      Logging out... */}
+                      <Spinner/>
+                    </>
+                  ) : (
+                    "Logout"
+                  )}
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </Nav>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
   );
 }

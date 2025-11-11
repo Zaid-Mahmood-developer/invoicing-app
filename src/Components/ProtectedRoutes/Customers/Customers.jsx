@@ -12,15 +12,17 @@ export default function Customers() {
   const [editMode, setEditMode] = useState([false, null]);
 
   const formatNTN_CNIC = (value) => {
-    let digits = value.replace(/\D/g, "");
-    if (digits.length <= 8) {
-      return digits.replace(/(\d{7})(\d{0,1})/, "$1-$2");
-    } else {
-      return digits
-        .replace(/(\d{5})(\d{0,7})(\d{0,1}).*/, "$1-$2-$3")
-        .replace(/-$/, "");
-    }
-  };
+  let digits = value.replace(/\D/g, "");
+
+  // If user has typed 7 or fewer digits → treat as NTN
+  if (digits.length <= 7) {
+    return digits.slice(0, 7);
+  }
+
+  // Otherwise treat as CNIC
+  return digits.slice(0, 13);
+};
+
 
   const formatPhone = (value) => {
     let digits = value.replace(/\D/g, "");
@@ -98,111 +100,108 @@ export default function Customers() {
           <div className="container">
             <div className="row">
               {inputBox.map((input, id) => {
-                console.log(input , "cI")
-              return  (
-                <div key={id} className="col-md-4 col-sm-12">
-                  {input.type === "dropdown" ? 
-                    (   
-                   <div>
-                      <label>{input.label}</label>
-                      <select
-                        name={input.name}
-                        className={`form-select mb-3 ${formik.touched[input.name] && formik.errors[input.name] ? "is-invalid" : ""
-                          }`}
-                        value={formik.values[input.name]}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                      >
-                        <option value={input.placeholder}>{input.placeholder}</option>
-                        {(input.name === "product" ? dynamicProducts.map((option, idx) => (
-                          <option key={idx} value={option.description}>
-                            {option.description}
-                          </option>
-                        )) : input.options.map((option, idx) => (
-                          <option key={idx} value={option}>
-                            {option}
-                          </option>
-                        )))}
-                      </select>
-                      {formik.touched[input.name] && formik.errors[input.name] && (
-                        <div className="invalid-feedback">{formik.errors[input.name]}</div>
-                      )}
-                    </div>
-               ) : input.name === "ntnCnic" ? (
-                    <div>
-                      <label>{input.label}</label>
-                      <input
-                        className={`form-control mb-3 ${formik.touched.ntnCnic && formik.errors.ntnCnic
-                          ? "is-invalid"
-                          : ""
-                          }`}
-                        type="text"
-                        name="ntnCnic"
-                        placeholder={input.placeholder}
-                        value={formik.values.ntnCnic}
-                        onChange={(e) => {
-                          const formatted = formatNTN_CNIC(e.target.value);
-                          formik.setFieldValue("ntnCnic", formatted);
-                        }}
-                        onBlur={formik.handleBlur}
-                      />
-                      {formik.touched.ntnCnic && formik.errors.ntnCnic && (
-                        <div className="invalid-feedback">
-                          {formik.errors.ntnCnic}
+                return (
+                  <div key={id} className="col-md-4 col-sm-12">
+                    {input.type === "dropdown" ?
+                      (
+                        <div>
+                          <label>{input.label}</label>
+                          <select
+                            name={input.name}
+                            className={`form-select mb-3 ${formik.touched[input.name] && formik.errors[input.name] ? "is-invalid" : ""
+                              }`}
+                            value={formik.values[input.name]}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          >
+                            <option value={input.placeholder}>{input.placeholder}</option>
+                            {(input.name === "product" ? dynamicProducts.map((option, idx) => (
+                              <option key={idx} value={option.description}>
+                                {option.description}
+                              </option>
+                            )) : input.options.map((option, idx) => (
+                              <option key={idx} value={option}>
+                                {option}
+                              </option>
+                            )))}
+                          </select>
+                          {formik.touched[input.name] && formik.errors[input.name] && (
+                            <div className="invalid-feedback">{formik.errors[input.name]}</div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ) : input.name === "contact" ? (
-                    <div>
-                      <label>{input.label}</label>
-                      <input
-                        className={`form-control mb-3 ${formik.touched.contact && formik.errors.contact
-                          ? "is-invalid"
-                          : ""
-                          }`}
-                        type="text"
-                        name="contact"
-                        placeholder={input.placeholder}
-                        value={formik.values.contact}
-                        onChange={(e) => {
-                          const formatted = formatPhone(e.target.value);
-                          formik.setFieldValue("contact", formatted);
-                        }}
-                        onBlur={formik.handleBlur}
-                      />
-                      {formik.touched.contact && formik.errors.contact && (
-                        <div className="invalid-feedback">
-                          {formik.errors.contact}
+                      ) : input.name === "ntnCnic" ? (
+                        <div>
+                          <label>{input.label}</label>
+                          <input
+                            type="text"
+                            name="ntnCnic"
+                            placeholder={input.placeholder}
+                            value={formik.values.ntnCnic}
+                            onChange={(e) => {
+                              const formatted = formatNTN_CNIC(e.target.value);
+                              formik.setFieldValue("ntnCnic", formatted);
+                            }}
+                            onBlur={formik.handleBlur}
+                            className={`form-control mb-3 ${formik.touched.ntnCnic && formik.errors.ntnCnic ? "is-invalid" : ""}`}
+                          />
+                          {formik.touched.ntnCnic && formik.errors.ntnCnic && (
+                            <div className="invalid-feedback">
+                              {formik.errors.ntnCnic}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      <label>{input.label}</label>
-                      <input
-                        className={`form-control mb-3 ${formik.touched[input.name] &&
-                          formik.errors[input.name]
-                          ? "is-invalid"
-                          : ""
-                          }`}
-                        type={input.type}
-                        name={input.name}
-                        placeholder={input.placeholder}
-                        value={formik.values[input.name]}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                      />
-                      {formik.touched[input.name] &&
-                        formik.errors[input.name] && (
-                          <div className="invalid-feedback">
-                            {formik.errors[input.name]}
-                          </div>
-                        )}
-                    </div>
-                  )
-                  }
-                </div>
-              )})}
+                      ) : input.name === "contact" ? (
+                        <div>
+                          <label>{input.label}</label>
+                          <input
+                            className={`form-control mb-3 ${formik.touched.contact && formik.errors.contact
+                              ? "is-invalid"
+                              : ""
+                              }`}
+                            type="text"
+                            name="contact"
+                            placeholder={input.placeholder}
+                            value={formik.values.contact}
+                            onChange={(e) => {
+                              const formatted = formatPhone(e.target.value);
+                              formik.setFieldValue("contact", formatted);
+                            }}
+                            onBlur={formik.handleBlur}
+                          />
+                          {formik.touched.contact && formik.errors.contact && (
+                            <div className="invalid-feedback">
+                              {formik.errors.contact}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <label>{input.label}</label>
+                          <input
+                            className={`form-control mb-3 ${formik.touched[input.name] &&
+                              formik.errors[input.name]
+                              ? "is-invalid"
+                              : ""
+                              }`}
+                            type={input.type}
+                            name={input.name}
+                            placeholder={input.placeholder}
+                            value={formik.values[input.name]}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          />
+                          {formik.touched[input.name] &&
+                            formik.errors[input.name] && (
+                              <div className="invalid-feedback">
+                                {formik.errors[input.name]}
+                              </div>
+                            )}
+                        </div>
+                      )
+                    }
+                  </div>
+                )
+              })}
             </div>
           </div>
 
@@ -241,7 +240,6 @@ export default function Customers() {
                   <td>{item.ntnCnic}</td>
                   <td>{item.address}</td>
                   <td>{item.contact}</td>
-                  <td>{item.product}</td>
                   <td>{item.province}</td>
                   <td>{item.customertype}</td>
                   <td>

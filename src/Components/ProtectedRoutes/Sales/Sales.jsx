@@ -6,27 +6,29 @@ import { IoAddOutline } from "react-icons/io5";
 import { RxUpdate } from "react-icons/rx";
 import { validationSchema, initialValues } from "./dummyUtils";
 import Swal from "sweetalert2";
-const TAX_RATE = 0.18;
+import { useSelector } from "react-redux";
 const Sales = () => {
   const [storedData, setStoredData] = useState([]);
   const [storeProductDesc, setStoreProductDesc] = useState([]);
   const [retrieveValues, setRetriveValues] = useState(null);
   const [retrieveProductValues, setRetriveProductValues] = useState(null);
   const [getProductsData, setGetProductsData] = useState([]);
-  const [editModeAndProductNameAndCustomerValue, setEditModeAndProductNameAndCustomerValue] = useState({ editMode: false, editProductName: false, customerValue: "" , customerType : ""});
+  const [editModeAndProductNameAndCustomerValue, setEditModeAndProductNameAndCustomerValue] = useState({ editMode: false, editProductName: false, customerValue: ""});
   const [editIndex, setEditIndex] = useState(null);
-  const [sellerInfoState, setSellerInfoState] = useState(null);
   const [date, setDate] = useState("");
 
+  const signupValues = useSelector((state) => state?.submitStore?.signupVal);
   const formik = useFormik({
     initialValues,
     validationSchema,
     onSubmit: (values, { resetForm }) => {
       const beforeTax = values.productQty * values.productPrice;
-      let afterTax = beforeTax + (beforeTax * TAX_RATE);
-      if (retrieveValues?.customertype === "Un-Registered" && values.furtherTax) {
+   
+      let afterTax = beforeTax +  (beforeTax * ( retrieveProductValues?.taxType?.salesTaxValue / 100));
+      console.log(afterTax , "afterTax22")
+      if (retrieveValues?.customertype === "Unregistered" && values.furtherTax) {
         values.furtherTax = Number(values.furtherTax)
-        afterTax += (beforeTax * values.furtherTax / 100)
+        afterTax += (beforeTax * (values.furtherTax /100))
       }
       if (editModeAndProductNameAndCustomerValue.editMode && editIndex !== null) {
         const updated = [...getProductsData];
@@ -78,7 +80,6 @@ const Sales = () => {
       resetForm();
       setRetriveProductValues(null);
       setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editProductName: false }))
-      // setRetriveValues(null);
     },
   });
 
@@ -98,13 +99,13 @@ const Sales = () => {
   useEffect(() => {
     const localData = JSON.parse(localStorage.getItem("customers")) || [];
     const productData = JSON.parse(localStorage.getItem("products")) || [];
-    const sellerValues = JSON.parse(localStorage.getItem("submitValues")) || [];
+    // const sellerValues = JSON.parse(localStorage.getItem("submitValues")) || [];
     const invoicesData = JSON.parse(localStorage.getItem("invoiceItems")) || [];
     const today = new Date().toISOString().split("T")[0];
     setDate(today);
     setStoredData(localData);
     setStoreProductDesc(productData);
-    setSellerInfoState(sellerValues)
+    // setSellerInfoState(sellerValues)
     setGetProductsData(invoicesData);
   }, []);
 
@@ -118,6 +119,7 @@ useEffect(()=>{
     setGetProductsData([])
   }
 }, [retrieveValues?.customertype])
+
   return (
     <div className="container-fluid p-4 main-dashboard h-100">
       <h2 className="page-title mb-2">🧾 FBR Invoice Integration</h2>
@@ -145,10 +147,10 @@ useEffect(()=>{
                 </p>
               </div>
               <div>
-                <p><strong>{sellerInfoState?.businessname}</strong></p>
-                <p><strong>{sellerInfoState?.ntncninc}</strong></p>
-                <p><strong>{sellerInfoState?.address}</strong></p>
-                <p><strong>{sellerInfoState?.province}</strong></p>
+                <p><strong>{signupValues?.BusinessName}</strong></p>
+                <p><strong>{signupValues?.NTNCNIC}</strong></p>
+                <p><strong>{signupValues?.Address}</strong></p>
+                <p><strong>{signupValues?.Province}</strong></p>
               </div>
             </div>
           </div>
@@ -275,7 +277,7 @@ useEffect(()=>{
                   <>
                     <p className="m-0 py-2"><strong>{retrieveProductValues?.hsCode}</strong></p>
                     <p className="m-0 py-2"><strong>{retrieveProductValues?.uom}</strong></p>
-                    <p className="m-0 py-2"><strong>{retrieveProductValues?.taxType}</strong></p>
+                    <p className="m-0 py-2"><strong>{retrieveProductValues?.taxType?.descriptionType}</strong></p>
                   </>
                 ) : (
                   <>
@@ -326,12 +328,12 @@ useEffect(()=>{
               <input
                 className="form-control my-2"
                 type="text"
-                value="18%"
+                value={retrieveProductValues?.taxType?.salesTaxValue ? `${retrieveProductValues?.taxType?.salesTaxValue}%` : "0%"}
                 readOnly
               />
             </div>
 
-            {retrieveValues?.customertype === "Un-Registered" && (
+            {retrieveValues?.customertype === "Unregistered" && (
               <>
                 <div className="inputLabelData">
                   <label className="w-25"><strong>Further Tax</strong></label>
@@ -378,12 +380,9 @@ useEffect(()=>{
                 type="number"
                 value={
                   formik.values.productQty && formik.values.productPrice
-                    ? (
-                      formik.values.productQty *
-                      formik.values.productPrice *
-                      (1 + TAX_RATE) +
-                      (retrieveValues?.customertype === "Un-Registered"
-                        ? (formik.values.productQty * formik.values.productPrice * formik.values.furtherTax) / 100
+                    ? ( (Number(formik.values.productPrice * formik.values.productQty) * ( Number(retrieveProductValues?.taxType?.salesTaxValue / 100)) ) + (formik.values.productPrice * formik.values.productQty) +
+                      (retrieveValues?.customertype === "Unregistered"
+                        ? Number(formik.values?.furtherTax / 100) * (formik.values.productPrice * formik.values.productQty) 
                         : 0)
                     ).toFixed(2)
                     : 0
@@ -391,6 +390,12 @@ useEffect(()=>{
                 readOnly
               />
             </div>
+
+            {/* Show Advanced Fields Start */}
+
+
+            {/* Show Advanced Fields End */}
+
 
             {editModeAndProductNameAndCustomerValue.editMode ? (
               <button type="submit" className="btn btn-success">
@@ -410,7 +415,7 @@ useEffect(()=>{
             setGetProductsData={setGetProductsData}
             onEdit={handleEdit}
             date={date}
-            sellerInfoState={sellerInfoState}
+            signupValues={signupValues}
             editMode={editModeAndProductNameAndCustomerValue.editMode}
           />
         )}
