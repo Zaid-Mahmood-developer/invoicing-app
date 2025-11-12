@@ -11,7 +11,7 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const postUrl = `${import.meta.env.VITE_API_URL}reset-password/${token}`;
   const { registerUser, data, loading, error } = usePostApi(postUrl);
-
+  const [resetPswd, setResetPswd] = useState(false);
   const formik = useFormik({
     initialValues: resetPasswordInitialValues,
     validationSchema: resetPasswordValidationSchema,
@@ -24,23 +24,24 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (data?.status) {
+      setResetPswd(true)
       Swal.fire({
         icon: "success",
-        title: "Password Reset Successful!",
-        text: "Password has been reset successfully.",
+        text: data?.message || "Password has been reset successfully",
         confirmButtonColor: "#0d6efd",
-      }).then(() => navigate("/"));
+        timer : 1500
+      }).then(() => navigate("/"), setResetPswd(false));
     }
-
     else if (!error?.status && error?.message) {
+      setResetPswd(false);
       Swal.fire({
         icon: "error",
-        title: "Reset Failed",
         text: error?.message || "Something went wrong. Please try again.",
         confirmButtonColor: "#dc3545",
       });
     }
     else if (error) {
+      setResetPswd(false);
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -51,6 +52,7 @@ const ResetPassword = () => {
     }
   }, [data, error, navigate]);
 
+  loading || resetPswd && <Spinner />
 
   return (
     <Container
@@ -103,13 +105,7 @@ const ResetPassword = () => {
             className="w-100 mt-2 d-flex justify-content-center align-items-center"
             disabled={loading || formik.isSubmitting}
           >
-            {loading ? (
-              <>
-                <Spinner />
-              </>
-            ) : (
-              "Reset Password"
-            )}
+            Reset Password
           </Button>
         </Form>
       </Card>

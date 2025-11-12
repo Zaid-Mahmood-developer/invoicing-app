@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { navMenu } from "../Navbar/dummyUtils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePostApi } from "../../../customhooks/usePostApi";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
@@ -12,12 +12,11 @@ export default function MainDashboard() {
   const { registerUser, data, loading, error } = usePostApi(logoutUrl);
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState(null);
-
+  const [loggingOut, setLoggingOut] = useState(false);
   const activeLinkFunction = (id) => {
     setActiveLink(id);
   };
 
-  // ✅ Logout logic
   const logoutBtn = async () => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -30,33 +29,35 @@ export default function MainDashboard() {
     });
 
     if (result.isConfirmed) {
-      try {
-        await registerUser({}, { Authorization: `Bearer ${refreshToken}` });
-
-        Swal.fire({
-          icon: "success",
-          title: "Logged out",
-          text: "You have been logged out successfully.",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-
-        localStorage.removeItem("loggedValues");
-        localStorage.removeItem("invoiceItems");
-        navigate("/");
-      } catch (err) {
-        Swal.fire({
-          icon: "error",
-          title: "Logout failed",
-          text: error?.message || "Something went wrong while logging out.",
-        });
-      }
+      setLoggingOut(true)
+      await registerUser({}, { Authorization: `Bearer ${refreshToken}` });
     }
-  };
+  }
 
   const handleChangePassword = () => {
     navigate("/change-password");
   };
+
+  loggingOut || loading && <Spinner />
+
+  useEffect(() => {
+    if (data?.status && data?.message) {
+      Swal.fire({
+        icon: "success",
+        title: "Logged out",
+        text: data?.message,
+        timer: 1500,
+        showConfirmButton: false,
+      }).then(() => navigate("/"), setLoggingOut(false));
+    } else if (!data?.status && data?.message) {
+      setLoggingOut(false);
+      Swal.fire({
+        icon: "error",
+        title: "Logout failed",
+        text: data?.message || "Something went wrong while logging out.",
+      });
+    }
+  }, [data?.status, data?.message])
 
   return (
     <Navbar
@@ -125,15 +126,7 @@ export default function MainDashboard() {
                   disabled={loading}
                   className="text-danger fw-semibold"
                 >
-                  {loading ? (
-                    <>
-                      {/* <Spinner animation="border" size="sm" className="me-2" />
-                      Logging out... */}
-                      <Spinner/>
-                    </>
-                  ) : (
-                    "Logout"
-                  )}
+                  Logout
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
