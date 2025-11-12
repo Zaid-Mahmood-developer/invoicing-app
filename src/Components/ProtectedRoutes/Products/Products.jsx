@@ -60,10 +60,11 @@ const Products = () => {
       if (result.isConfirmed) {
         const headers = { Authorization: `Bearer ${token}` }
         await deleteUser(`${import.meta.env.VITE_API_URL}products/${id}`, headers)
-        const filteredProducts = totalProducts.filter((item) => {
-          return item._id !== id
-        });
-        setTotalProducts(filteredProducts);
+        // const filteredProducts = totalProducts.filter((item) => {
+        //   return item._id !== id
+        // });
+        // setTotalProducts(filteredProducts);
+        fetchData();
       }
     });
   };
@@ -81,12 +82,13 @@ const Products = () => {
 
   useEffect(() => {
     if (postData?.success) {
-      setTotalProducts((prev) => {
-        const arrayPrev = Array.isArray(prev) ? prev : [];
-        const exists = arrayPrev.some((item) => item._id === postData.data._id);
-        if (exists) return arrayPrev;
-        return [...arrayPrev, postData.data];
-      });
+      // setTotalProducts((prev) => {
+      //   const arrayPrev = Array.isArray(prev) ? prev : [];
+      //   const exists = arrayPrev.some((item) => item._id === postData.data._id);
+      //   if (exists) return arrayPrev;
+      //   return [...arrayPrev, postData.data];
+      // });
+      fetchData();
       Swal.fire("Success", "Product has been added successfully", "success");
     }
 
@@ -98,14 +100,15 @@ const Products = () => {
 
   useEffect(() => {
     if (putData?.success) {
-      setTotalProducts((prev) =>
-        prev.map((item) => {
-          if (item._id === currentProductId) {
-            return { ...item, ...putData.product };
-          }
-          return item;
-        })
-      );
+      // setTotalProducts((prev) =>
+      //   prev.map((item) => {
+      //     if (item._id === currentProductId) {
+      //       return { ...item, ...putData.product };
+      //     }
+      //     return item;
+      //   })
+      // );
+      fetchData();
       Swal.fire("Success", "Product has been updated successfully", "success");
       setEditMode({ active: false, id: null });
       formik.resetForm();

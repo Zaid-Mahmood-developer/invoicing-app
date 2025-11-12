@@ -5,263 +5,224 @@ import { MdModeEdit, MdDelete } from "react-icons/md";
 import { RxUpdate } from "react-icons/rx";
 import Swal from "sweetalert2";
 import { useFormik } from "formik";
+import { useSelector } from "react-redux";
+import Spinner from "../../utils/Spinner/Spinner";
+import { usePostApi } from "../../../customhooks/usePostApi";
+import { usePutApi } from "../../../customhooks/usePutApi";
+import { useDeleteApi } from "../../../customhooks/useDeleteApi";
+import { useGetApi } from "../../../customhooks/useGetApi";
 
 export default function Customers() {
+  const { token } = useSelector((state) => state?.submitStore?.loginVal);
   const [totalCustomers, setTotalCustomers] = useState([]);
-  const [dynamicProducts, setDynamicProducts] = useState([]);
-  const [editMode, setEditMode] = useState([false, null]);
+  const [editMode, setEditMode] = useState({ active: false, id: null });
 
-  const formatNTN_CNIC = (value) => {
-  let digits = value.replace(/\D/g, "");
+  const apiUrl = `${import.meta.env.VITE_API_URL}customer`;
+  const currentCustomerId = editMode.id;
+  const putUrl = currentCustomerId ? `${apiUrl}/${currentCustomerId}` : null;
 
-  // If user has typed 7 or fewer digits → treat as NTN
-  if (digits.length <= 7) {
-    return digits.slice(0, 7);
-  }
+  const { data: getData, loading: getLoading, error: getError, fetchData } = useGetApi(apiUrl, { Authorization: `Bearer ${token}` });
+  const { registerUser, data: postData, loading: postLoading, error: postError } = usePostApi(apiUrl);
+  const { updateData, data: putData, loading: putLoading, error: putError } = usePutApi(putUrl);
+  const { deleteUser, data: delData, loading: delLoading, error: delError } = useDeleteApi();
 
-  // Otherwise treat as CNIC
-  return digits.slice(0, 13);
-};
-
-
-  const formatPhone = (value) => {
-    let digits = value.replace(/\D/g, "");
-    if (!digits.startsWith("92")) {
-      digits = "92" + digits;
-    }
-    return "+92-" + digits.substring(2).replace(/(\d{3})(\d{0,7}).*/, "$1-$2");
-  };
   const formik = useFormik({
     initialValues,
     validationSchema,
-    onSubmit: (values, { resetForm }) => {
-      if (editMode[0]) {
-        setTotalCustomers((prev) =>
-          prev.map((item, index) => (index === editMode[1] ? values : item))
-        );
-        setEditMode([false, null]);
+    onSubmit: async (values, { resetForm }) => {
+      const headers = { Authorization: `Bearer ${token}` };
+
+      if (editMode.active && currentCustomerId) {
+        await updateData(values, headers);
       } else {
-        setTotalCustomers((prev) => [...prev, values]);
+        await registerUser(values, headers);
       }
       resetForm();
     },
   });
 
   const editCustomerFunc = (id) => {
-    const findCustomer = totalCustomers.find((_, index) => index === id);
-    formik.setValues(findCustomer);
-    setEditMode([true, id]);
+    const findCustomer = totalCustomers.find((item) => item._id === id);
+    if (findCustomer) {
+      formik.setValues(findCustomer);
+      setEditMode({ active: true, id });
+    }
   };
 
   const delCustomerFunc = (id) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "Are you sure you want to delete this customer?",
+      text: "Do you want to delete this customer?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        const filteredCustomers = totalCustomers.filter(
-          (_, index) => {
-            return index !== id
-          }
-        );
-        setTotalCustomers(filteredCustomers);
-        Swal.fire("Deleted!", "Customer has been deleted.", "success");
+        const headers = { Authorization: `Bearer ${token}` };
+        await deleteUser(`${apiUrl}/${id}`, headers);
       }
     });
   };
 
   useEffect(() => {
-    const products = JSON.parse(localStorage.getItem("products")) || [];
-    setDynamicProducts(products);
-    const storedCustomers = JSON.parse(localStorage.getItem("customers")) || [];
-    setTotalCustomers(storedCustomers);
-  }, [])
+    if (postData?.success) {
+      Swal.fire("Success", "Customer has been added successfully", "success");
+      fetchData(); // refresh
+    }
+    if (postError) {
+      Swal.fire("Error", postError?.message || "Something went wrong", "error");
+    }
+  }, [postData, postError]);
 
   useEffect(() => {
-    if (totalCustomers.length > 0) {
-      localStorage.setItem("customers", JSON.stringify(totalCustomers));
-    } else {
-      localStorage.removeItem("customers")
+    if (putData?.success) {
+      Swal.fire("Success", "Customer has been updated successfully", "success");
+      setEditMode({ active: false, id: null });
+      formik.resetForm();
+      fetchData(); // refresh
     }
-  }, [totalCustomers]);
+    if (putError) {
+      Swal.fire("Error", putError?.message || "Something went wrong", "error");
+    }
+  }, [putData, putError]);
+
+  useEffect(() => {
+    if (delData?.message) {
+      Swal.fire("Deleted!", delData?.message, "success");
+      fetchData(); // refresh
+    }
+    if (delError) {
+      Swal.fire("Error", delError?.message || "Something went wrong", "error");
+    }
+  }, [delData, delError]);
+
+  useEffect(() => {
+    if (getData?.success) {
+      setTotalCustomers(getData.data);
+    }
+    if (getError) {
+      Swal.fire("Error", getError.message || "Something went wrong", "error");
+    }
+  }, [getData, getError]);
 
   return (
-    <div className="container-fluid p-4 main-dashboard vh-100">
-      <h2 className="page-title mb-2">👤 Customer Management</h2>
-      <div>
-        <h3>{editMode[0] ? "✏️ Edit Customer" : "➕ Add Customer"}</h3>
+    <>
+      {postLoading || putLoading || delLoading || getLoading ? (
+        <Spinner />
+      ) : (
+        <div className="container-fluid p-4 main-dashboard vh-100">
+          <h2 className="page-title mb-2">👤 Customer Management</h2>
+          <div>
+            <h3>{editMode.active ? "✏️ Edit Customer" : "➕ Add Customer"}</h3>
 
-        <form onSubmit={formik.handleSubmit}>
-          <div className="container">
-            <div className="row">
-              {inputBox.map((input, id) => {
-                return (
-                  <div key={id} className="col-md-4 col-sm-12">
-                    {input.type === "dropdown" ?
-                      (
-                        <div>
-                          <label>{input.label}</label>
-                          <select
-                            name={input.name}
-                            className={`form-select mb-3 ${formik.touched[input.name] && formik.errors[input.name] ? "is-invalid" : ""
-                              }`}
-                            value={formik.values[input.name]}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                          >
-                            <option value={input.placeholder}>{input.placeholder}</option>
-                            {(input.name === "product" ? dynamicProducts.map((option, idx) => (
-                              <option key={idx} value={option.description}>
-                                {option.description}
-                              </option>
-                            )) : input.options.map((option, idx) => (
-                              <option key={idx} value={option}>
-                                {option}
-                              </option>
-                            )))}
-                          </select>
-                          {formik.touched[input.name] && formik.errors[input.name] && (
-                            <div className="invalid-feedback">{formik.errors[input.name]}</div>
-                          )}
-                        </div>
-                      ) : input.name === "ntnCnic" ? (
-                        <div>
-                          <label>{input.label}</label>
-                          <input
-                            type="text"
-                            name="ntnCnic"
-                            placeholder={input.placeholder}
-                            value={formik.values.ntnCnic}
-                            onChange={(e) => {
-                              const formatted = formatNTN_CNIC(e.target.value);
-                              formik.setFieldValue("ntnCnic", formatted);
-                            }}
-                            onBlur={formik.handleBlur}
-                            className={`form-control mb-3 ${formik.touched.ntnCnic && formik.errors.ntnCnic ? "is-invalid" : ""}`}
-                          />
-                          {formik.touched.ntnCnic && formik.errors.ntnCnic && (
-                            <div className="invalid-feedback">
-                              {formik.errors.ntnCnic}
-                            </div>
-                          )}
-                        </div>
-                      ) : input.name === "contact" ? (
-                        <div>
-                          <label>{input.label}</label>
-                          <input
-                            className={`form-control mb-3 ${formik.touched.contact && formik.errors.contact
+            <form onSubmit={formik.handleSubmit}>
+              <div className="container">
+                <div className="row">
+                  {inputBox.map((input, id) => (
+                    <div key={id} className="col-md-4 col-sm-12">
+                      <label>{input.label}</label>
+
+                      {input.type === "dropdown" ? (
+                        <select
+                          name={input.name}
+                          className={`form-select mb-3 ${formik.touched[input.name] && formik.errors[input.name]
                               ? "is-invalid"
                               : ""
-                              }`}
-                            type="text"
-                            name="contact"
-                            placeholder={input.placeholder}
-                            value={formik.values.contact}
-                            onChange={(e) => {
-                              const formatted = formatPhone(e.target.value);
-                              formik.setFieldValue("contact", formatted);
-                            }}
-                            onBlur={formik.handleBlur}
-                          />
-                          {formik.touched.contact && formik.errors.contact && (
-                            <div className="invalid-feedback">
-                              {formik.errors.contact}
-                            </div>
-                          )}
-                        </div>
+                            }`}
+                          value={formik.values[input.name]}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                        >
+                          <option value="">{input.placeholder}</option>
+                          {input.options.map((option, idx) => (
+                            <option key={idx} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
-                        <div>
-                          <label>{input.label}</label>
-                          <input
-                            className={`form-control mb-3 ${formik.touched[input.name] &&
-                              formik.errors[input.name]
+                        <input
+                          className={`form-control mb-3 ${formik.touched[input.name] && formik.errors[input.name]
                               ? "is-invalid"
                               : ""
-                              }`}
-                            type={input.type}
-                            name={input.name}
-                            placeholder={input.placeholder}
-                            value={formik.values[input.name]}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                          />
-                          {formik.touched[input.name] &&
-                            formik.errors[input.name] && (
-                              <div className="invalid-feedback">
-                                {formik.errors[input.name]}
-                              </div>
-                            )}
-                        </div>
-                      )
-                    }
-                  </div>
-                )
-              })}
+                            }`}
+                          type={input.type}
+                          name={input.name}
+                          placeholder={input.placeholder}
+                          value={formik.values[input.name]}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                        />
+                      )}
+
+                      {formik.touched[input.name] && formik.errors[input.name] && (
+                        <div className="invalid-feedback">{formik.errors[input.name]}</div>
+                      )}
+                    </div>
+                  ))}
+
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className={`${editMode.active ? "btn btn-success" : "btn btn-primary"} mt-3`}
+              >
+                {editMode.active ? (
+                  <>
+                    <RxUpdate className="fs-5" /> Update Customer
+                  </>
+                ) : (
+                  <>
+                    <IoAddOutline className="fs-4" /> Add Customer
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="table-responsive">
+              <table className="table my-4 text-center">
+                <thead>
+                  <tr>
+                    {tableHeading.map((heading, id) => (
+                      <th key={id} scope="col">{heading}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {totalCustomers?.map((item, id) => (
+                    <tr key={item._id}>
+                      <th scope="row">{id + 1}</th>
+                      <td>{item.name}</td>
+                      <td>{item.ntnCnic}</td>
+                      <td>{item.address}</td>
+                      <td>{item.contact}</td>
+                      <td>{item.province}</td>
+                      <td>{item.customertype}</td>
+                      <td>
+                        <button
+                          onClick={() => editCustomerFunc(item._id)}
+                          className="btn btn-sm btn-primary me-2"
+                        >
+                          <MdModeEdit /> Edit
+                        </button>
+                        <button
+                          onClick={() => delCustomerFunc(item._id)}
+                          className="btn btn-sm btn-danger"
+                        >
+                          <MdDelete /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-
-          <button
-            type="submit"
-            className={`${editMode[0] ? "btn btn-success" : "btn btn-primary"} mt-3`}
-          >
-            {editMode[0] ? (
-              <>
-                <RxUpdate className="fs-5" /> Update Customer
-              </>
-            ) : (
-              <>
-                <IoAddOutline className="fs-4" /> Add Customer
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="table-responsive">
-          <table className="table my-4 text-center">
-            <thead>
-              <tr>
-                {tableHeading.map((heading, id) => (
-                  <th key={id} scope="col">
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {totalCustomers.map((item, id) => (
-                <tr className="p-4" key={id}>
-                  <th scope="row">{id + 1}</th>
-                  <td>{item.name}</td>
-                  <td>{item.ntnCnic}</td>
-                  <td>{item.address}</td>
-                  <td>{item.contact}</td>
-                  <td>{item.province}</td>
-                  <td>{item.customertype}</td>
-                  <td>
-                    <button
-                      onClick={() => editCustomerFunc(id)}
-                      className="btn btn-sm btn-primary me-2"
-                    >
-                      <MdModeEdit /> Edit
-                    </button>
-                    <button
-                      onClick={() => delCustomerFunc(id)}
-                      className="btn btn-sm btn-danger"
-                    >
-                      <MdDelete /> Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
