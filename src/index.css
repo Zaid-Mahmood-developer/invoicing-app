@@ -79,6 +79,26 @@
   align-items: center;
 }
 
+/* About Section Start */
 
+.liItems {
+  margin: 2em;
+  font-size: large;
+}
+
+/* About Section End */
+
+
+/* Media queries */
+
+.responsive-btn {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .responsive-btn {
+    width: 25%;
+  }
+}
 
 

@@ -6,29 +6,17 @@ export const products = [
   { formLabelClass: "form-label", inputClass: "form-control", labelName: "Unit of Measure (UoM):", name: "uom", type: "dropdownUnit", placeholder: "Unit (e.g., Numbers , kg, pcs , PKTs)", options: ["Numbers", "KG", "pieces", "PKTs"] },
   {
     formLabelClass: "form-label", inputClass: "form-control", labelName: "Tax Type", name: "taxType", type: "text", placeholder: "Enter tax type", type: "dropdown",
-    //  options: [
-    //   { ScenarioId: "SN001", descriptionType: "Goods at standard rate (default)", salesTaxValue: 18 },
-    //   { ScenarioId: "SN002", descriptionType: "Goods at standard rate (default)", salesTaxValue: 18 },
-    //   { ScenarioId: "SN005", descriptionType: "Reduced Rate Sale", salesTaxValue: 5 },
-    //   { ScenarioId: "SN006", descriptionType: "Exempt goods sale", salesTaxValue: 0 },
-    //   { ScenarioId: "SN007", descriptionType: "Zero rated sale", salesTaxValue: 0 },
-    //   { ScenarioId: "SN008", descriptionType: "Rate for 3rd schedule goods", salesTaxValue: 18 },
-    //   { ScenarioId: "SN019", descriptionType: "Sale for services", salesTaxValue: 16 },
-    //   { ScenarioId: "SN026", descriptionType: "Sale to end consumer by retailers (Goods at standard rate)", salesTaxValue: 18 },
-    //   { ScenarioId: "SN027", descriptionType: "Sale to end consumer by retailers (3rd schedule goods)", salesTaxValue: 18 },
-    //   { ScenarioId: "SN028", descriptionType: "Sale to end consumer by retailers (Goods at reduced rate)", salesTaxValue: 5 }
-    // ]
     options: [
-      {  descriptionType: "Goods at standard rate (default)", salesTaxValue: 18 },
-      {  descriptionType: "Goods at standard rate (default)", salesTaxValue: 18 },
-      {  descriptionType: "Reduced Rate Sale", salesTaxValue: 5 },
-      { descriptionType: "Exempt goods sale", salesTaxValue: 0 },
-      {  descriptionType: "Zero rated sale", salesTaxValue: 0 },
-      {  descriptionType: "Rate for 3rd schedule goods", salesTaxValue: 18 },
-      {  descriptionType: "Sale for services", salesTaxValue: 16 },
-      {  descriptionType: "Sale to end consumer by retailers (Goods at standard rate)", salesTaxValue: 18 },
-      {  descriptionType: "Sale to end consumer by retailers (3rd schedule goods)", salesTaxValue: 18 },
-      {  descriptionType: "Sale to end consumer by retailers (Goods at reduced rate)", salesTaxValue: 5 }
+      { ScenarioId: "SN001", descriptionType: "Goods at standard rate to registered buyers", saleType: "Goods at standard rate (default)", salesTaxValue: 18 },
+      { ScenarioId: "SN002", descriptionType: "Goods at standard rate to unregistered buyers", saleType: "Goods at standard rate (default)", salesTaxValue: 18 },
+      { ScenarioId: "SN005", descriptionType: "Reduced rate sale", saleType: "Goods at Reduced Rate", salesTaxValue: 5 },
+      { ScenarioId: "SN006", descriptionType: "Exempt goods sale", saleType: "Exempt Goods", salesTaxValue: 0 },
+      { ScenarioId: "SN007", descriptionType: "Zero rated sale", saleType: "Goods at zero-rate", salesTaxValue: 0 },
+      { ScenarioId: "SN008", descriptionType: "Sale of 3rd schedule goods", saleType: "3rd Schedule Goods", salesTaxValue: 18 },
+      { ScenarioId: "SN019", descriptionType: "Sale of Services", saleType: "Services", salesTaxValue: 16 },
+      { ScenarioId: "SN026", descriptionType: "Sale to End Consumer by retailers (Goods at Standard Rate)", saleType: "Goods at Standard Rate (default)", salesTaxValue: 18 },
+      { ScenarioId: "SN027", descriptionType: "Sale to End Consumer by retailers (3rd Schedule Goods)", saleType: "3rd Schedule Goods", salesTaxValue: 18 },
+      { ScenarioId: "SN028", descriptionType: "Sale to End Consumer by retailers (Goods at Reduced Rate)", saleType: "Goods at Reduced Rate", salesTaxValue: 5 }
     ]
   },
   { formLabelClass: "form-label", inputClass: "form-control", labelName: "Quantity On Hand:", name: "qtyInHand", type: "number", placeholder: "HS Code (####.####)" },
@@ -38,9 +26,7 @@ export const initialValues = {
   hsCode: "",
   description: "",
   uom: "Select UOM",
-  // taxType: { descriptionType: "", ScenarioId: "" , salesTaxValue : "" },
-  taxType: { descriptionType: "" , salesTaxValue : "" },
-
+  taxType: { descriptionType: "", ScenarioId: "" , saleType  : "", salesTaxValue : "" },
   qtyInHand: 0,
 }
 
@@ -61,8 +47,9 @@ export const validationSchema = Yup.object({
     .required("Uom is required"),
   taxType: Yup.object({
     descriptionType: Yup.string().required("Please select tax type"),
-    // ScenarioId: Yup.string().required(),
-    salesTaxValue : Yup.string().required()
+    ScenarioId: Yup.string().required(),
+    salesTaxValue: Yup.string().required() ,
+    saleType : Yup.string().required()
   })
     .required("Tax type is required"),
   qtyInHand: Yup.number()

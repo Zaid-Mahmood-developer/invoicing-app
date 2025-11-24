@@ -6,12 +6,12 @@ export const usePutApi = (url) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const updateData = async (payload = {}, headers = {}) => {
+  const updateData = async (payload = {}) => {
     try {
       setLoading(true);
         setData(null);
       setError(null);
-      const response = await axios.put(url, payload, { headers });
+      const response = await axios.put(url, payload, { withCredentials : true });
       setData(response.data);
     } catch (err) {
       setData(null);

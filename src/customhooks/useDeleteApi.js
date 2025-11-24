@@ -6,12 +6,12 @@ export const useDeleteApi = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const deleteUser = async (url, headers) => {
+    const deleteUser = async (url) => {
         try {
             setLoading(true);
             setData(null);
             setError(null);
-            const response = await axios.delete(url, { headers });
+            const response = await axios.delete(url, { withCredentials : true });
             setData(response.data)
         }
         catch (error) {

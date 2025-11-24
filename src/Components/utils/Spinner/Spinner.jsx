@@ -2,16 +2,18 @@ import { ThreeCircles } from "react-loader-spinner";
 
 const Spinner = () => {
     return (
-        <div className="d-flex justify-content-center align-items-center vh-100 container-bg">
+        <div
+            className="d-flex justify-content-center align-items-center vh-100"
+        >
             <ThreeCircles
                 visible={true}
                 height="250"
                 width="250"
                 ariaLabel="three-circles-loading"
-                color="#b76e79"
-                outerCircleColor="#8c5b61"
-                middleCircleColor="#b76e79"
-                innerCircleColor="#e5b7b7"
+                outerCircleColor="#0A5275"  
+                middleCircleColor="#0c6c94"  
+                innerCircleColor="#121212" 
+                color="#0A5275"             
             />
         </div>
     );

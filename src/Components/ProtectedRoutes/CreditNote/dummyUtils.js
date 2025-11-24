@@ -5,10 +5,6 @@ export const buyerInfo = [
   { paragraphHeading: "Business Name", type: "dropDown", paragraphDetail: [] },
 ]
 
-export const scenarioId = [
-  { paragraphHeading: "Scenario ID", type: "dropDown", paragraphDetail: ["SN001" , "SN002" , "SN005", "SN006", "SN007", "SN008", "SN019", "SN026", "SN027", "SN028",] },
-]
-
 export const addItem = [
   { heading: "Add Item" },
   { type: "dropDown", prductDescriptionHeading: "Product Name", productDescription: [], HsCode: "", Qunatity: 0, valueWithoutTax: "", salesTax: "", furtherTax: "" }
@@ -20,18 +16,16 @@ export const initialValues = {
   customertype: "",
   productQty: "0",
   productPrice: "0",
-  furtherTax: "0" ,
-   scenarioId: "",
+  furtherTax: "0"
 }
 
 export const validationSchema = Yup.object({
   customerValue: Yup.string().when("customertype", {
-    is: (val) => !!val,
+    is: (val) => !!val, 
     then: (schema) => schema.required("Buyer name is required"),
     otherwise: (schema) => schema.notRequired(),
   }),
   productValue: Yup.string().required("Product name is required"),
-    scenarioId: Yup.string().required("Scenario ID is a required field"),
   productQty: Yup.number()
     .typeError("Quantity must be a number")
     .positive("Quantity must be greater than 0")

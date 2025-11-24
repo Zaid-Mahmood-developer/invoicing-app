@@ -4,23 +4,34 @@ import { useState } from "react";
 export const usePostApi = (url) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
 
   const registerUser = async (payload = {}, headers = {}) => {
     try {
       setLoading(true);
-      setData(null);
       setError(null);
-      const response = await axios.post(url, payload, { headers });
-        
+
+      const response = await axios.post(
+        url,
+        payload,
+        {
+          headers,
+          withCredentials: true,
+        }
+      );
+
       setData(response?.data);
-    } catch (err) {
-      setData(null);
-      setError(err?.response?.data || "Something went wrong");
-    } finally {
+      return response?.data; 
+    } 
+    catch (err) {
+      const message = err?.response?.data || "Something went wrong";
+      setError(message);
+      return { error: message }; 
+    } 
+    finally {
       setLoading(false);
     }
   };
-  
+
   return { registerUser, data, loading, error };
 };

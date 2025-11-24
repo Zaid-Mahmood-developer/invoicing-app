@@ -1,15 +1,13 @@
-import { Container, Form, Button, Card, Alert } from "react-bootstrap";
+import { Container, Form, Button, Card } from "react-bootstrap";
 import { useFormik } from "formik";
 import { changePasswordInitialValues, changePasswordValidationSchema } from "./dummyUtils";
 import { useEffect } from "react";
 import { usePostApi } from "../../customhooks/usePostApi";
 import Swal from "sweetalert2";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../utils/Spinner/Spinner";
 const ChangePassword = () => {
     const navigate = useNavigate();
-    const { refreshToken } = useSelector((state) => state?.submitStore?.loginVal);
     const changePasswordUrl = `${import.meta.env.VITE_API_URL}change-password`;
     const { registerUser, data, loading, error } = usePostApi(changePasswordUrl);
 
@@ -17,7 +15,7 @@ const ChangePassword = () => {
         initialValues: changePasswordInitialValues,
         validationSchema: changePasswordValidationSchema,
         onSubmit: async (values, { resetForm }) => {
-            await registerUser({ oldpassword: values.oldPassword, newpassword: values.newPassword }, { Authorization: `Bearer ${refreshToken}` });
+            await registerUser({ oldpassword: values.oldPassword, newpassword: values.newPassword });
             resetForm();
         },
     });
@@ -26,7 +24,7 @@ const ChangePassword = () => {
         if (data?.status) {
             Swal.fire({
                 icon: "success",
-                title: "Password Reset Successful!",
+                title: "Success",
                 text: "Password has been changed successfully.",
                 confirmButtonColor: "#0d6efd",
             }).then(() => navigate("/home"));
@@ -35,7 +33,7 @@ const ChangePassword = () => {
         else if (!error?.status && error?.message) {
             Swal.fire({
                 icon: "error",
-                title: "Reset Failed",
+                title: "Error",
                 text: error?.message || "Something went wrong. Please try again.",
                 confirmButtonColor: "#dc3545",
             });

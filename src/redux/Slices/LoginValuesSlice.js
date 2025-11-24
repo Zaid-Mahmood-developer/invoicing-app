@@ -1,20 +1,33 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState =  {loginVal : null , signupVal : null} ;
+const initialState = {
+    user: null,
+    loginVal: false,
+    loading: true,
+    signupVal: null // for initial session check
+};
 
 export const LoginValuesSlice = createSlice({
-    name : "submitStore",
-    initialState ,
+    name: "submitStore",
+    initialState,
     reducers: {
-        submitVals: (state , action)=>{
-            state.loginVal = action.payload;
+        setUser: (state, action) => {
+            state.user = action.payload;
+            state.loginVal = !!action.payload;
         },
-        signupVals: (state , action)=>{
+        logout: (state) => {
+            state.user = null;
+            state.loginVal = false;
+        },
+        setLoading: (state, action) => {
+            state.loading = action.payload;
+        },
+        signupVals: (state, action) => {
             state.signupVal = action.payload;
         }
     }
 })
 
-export const {submitVals , signupVals} = LoginValuesSlice.actions;
+export const { setUser, logout, setLoading, signupVals } = LoginValuesSlice.actions;
 
 export default LoginValuesSlice.reducer;
