@@ -50,8 +50,19 @@ export const signupInitialValues = {
 // ✅ Validation Schema
 export const signupValidationSchema = Yup.object({
     ntncninc: Yup.string()
-        .matches(/^[0-9]{7}$/, "NTN must be exactly 7 digits")
-        .required("NTN/CNIC is required"),
+     .required("NTN or CNIC is required")
+     .test(
+       "ntn-cnic-format",
+       "Must be a valid NTN (7 digits) or CNIC (13 digits, digits only — no dashes)",
+       (value) => {
+         if (!value) return false;
+         if (/\D/.test(value)) return false;
+         const isNTN = value.length === 7;
+         const isCNIC = value.length === 13;
+         return isNTN || isCNIC;
+       }
+     )
+       .required("NTN or CNIC is required"),
 
     businessname: Yup.string()
         .matches(/^[A-Za-z\s]+$/, "Only alphabets are allowed")

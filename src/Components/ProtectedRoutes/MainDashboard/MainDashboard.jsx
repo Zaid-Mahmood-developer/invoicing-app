@@ -1,12 +1,30 @@
 import { tile } from "./dummyUtils";
 import { useNavigate } from "react-router-dom";
-
+import { useGetApi } from "../../../customhooks/useGetApi";
+import Swal from "sweetalert2";
+import { useEffect, useState } from "react";
+import { handlePrint, invoiceData } from "../../Invoices/InvoiceTemplate";
+import InvoicePdf from "../../Invoices/InvoicePdf";
 const MainDashboard = () => {
+    const getUrl = `${import.meta.env.VITE_API_URL}dashboard`;
+    const [dashboardData, setDashboardData] = useState(null);
     const navigate = useNavigate();
+    const { data, loading, error, fetchData } = useGetApi(getUrl);
     const navigateFunc = () => {
         navigate("/creditnote");
     };
 
+    useEffect(() => {
+        if (data?.success) {
+            setDashboardData(data?.data)
+        }
+        if (error) {
+            Swal.fire("Error", error.message || "Something went wrong", "error");
+        }
+    }, [data, error])
+    useEffect(() => {
+        fetchData()
+    }, [])
     return (
         <div
             className="container-fluid main-dashboard vh-100 p-4"
@@ -54,8 +72,14 @@ const MainDashboard = () => {
                                 </div>
                                 <div>
                                     <p className="mb-0">{item.title}</p>
-                                    <h3 className="mb-0">{item.number}</h3>
+                                    <h3 className="mb-0">
+                                        {dashboardData?.[item.key] !== undefined
+                                            ? Number(dashboardData[item.key]).toFixed(2)
+                                            : "--"}
+                                    </h3>
                                     <small>{item.currentTime}</small>
+
+
                                 </div>
                             </div>
                         </div>
@@ -65,7 +89,7 @@ const MainDashboard = () => {
 
             {/* Sales Table */}
             <div className="salesBreakdown mt-4">
-                <h3 className="py-4"  style={{ color: "#E0E7E9" }}>
+                <h3 className="py-4" style={{ color: "#E0E7E9" }}>
                     Today Sales Breakdown
                 </h3>
                 <div className="table-responsive shadow-lg rounded-4 p-3 mt-4"
@@ -105,7 +129,10 @@ const MainDashboard = () => {
                                 <td>$50</td>
                                 <td>$550</td>
                                 <td>
-                                    <button className="btn btn-sm btn-primary">View</button>
+                                    <button onClick={handlePrint} className="btn btn-sm btn-primary">View</button>
+                                </td>
+                                <td style={{ display: "none" }}>
+                                    <InvoicePdf invoice={invoiceData} />
                                 </td>
                                 <td>
                                     <button onClick={navigateFunc} className="btn btn-sm btn-success">

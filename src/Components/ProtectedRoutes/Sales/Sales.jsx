@@ -3,7 +3,7 @@ import { useFormik } from "formik";
 import SalesInvoice from "./SalesInvoice";
 import { IoAddOutline } from "react-icons/io5";
 import { RxUpdate } from "react-icons/rx";
-import { validationSchema, initialValues, buyerInfo, scenarioId } from "./dummyUtils";
+import { validationSchema, initialValues, buyerInfo, scenarioId, SRO_Schedule_Options_ReducedRates, SRO_Schedule_Options_ZeroRate, SRO_ItemSerial_Options_ReducedRates, SRO_ItemSerial_Options_ZeroRate } from "./dummyUtils";
 import Swal from "sweetalert2";
 import { useGetApi } from "../../../customhooks/useGetApi";
 import Spinner from "../../utils/Spinner/Spinner";
@@ -11,10 +11,11 @@ const Sales = () => {
   const getSellerUrl = `${import.meta.env.VITE_API_URL}seller/details`;
   const getAllCustomers = `${import.meta.env.VITE_API_URL}customer`;
   const getAllProducts = `${import.meta.env.VITE_API_URL}products`;
-
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [retrieveValues, setRetriveValues] = useState(null);
   const [retrieveProductValues, setRetriveProductValues] = useState(null);
   const [selectedScenarioId, setSelectedScenarioId] = useState("");
+  const [selectedSROSchedule, setSelectedSROSchedule] = useState("");
 
   const [getProductsData, setGetProductsData] = useState([]);
   const [editModeAndProductNameAndCustomerValue, setEditModeAndProductNameAndCustomerValue] = useState({ editMode: false, editProductName: false, customerValue: "" });
@@ -30,7 +31,7 @@ const Sales = () => {
     validationSchema,
     onSubmit: (values, { resetForm }) => {
       const beforeTax = values.productQty * values.productPrice;
-
+      const price = values.productPrice;
       let afterTax = beforeTax + (beforeTax * (retrieveProductValues?.taxType?.salesTaxValue / 100));
       if (retrieveValues?.customertype === "Unregistered" && values.furtherTax) {
         values.furtherTax = Number(values.furtherTax)
@@ -44,7 +45,7 @@ const Sales = () => {
           getRetrieveValues.furtherTax = 0
         }
         const combineEditProductValues = {
-          ...getRetrieveValues, hsCode, description, uom, taxType,
+          ...getRetrieveValues, hsCode, description, uom, taxType, price,
           productValueBeforeTax: beforeTax,
           productValueAfterTax: afterTax
         }
@@ -69,6 +70,7 @@ const Sales = () => {
           ...retrieveValues,
           productValueBeforeTax: beforeTax,
           productValueAfterTax: afterTax,
+          price,
           ...retrieveProductValues
         };
         const isProductHsCodeExisted = getProductsData.find((item) => ((item.productValue === combineProductValue.productValue) && (item.hsCode === combineProductValue.hsCode)));
@@ -95,12 +97,39 @@ const Sales = () => {
       productQty: item.productQty || "0",
       productPrice: item.productPrice || "0",
       furtherTax: item.furtherTax || "0",
+      scenarioId: item.scenarioId || "",
     });
     setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editMode: true, customerValue: item }));
     setEditIndex(index);
     setRetriveProductValues(item);
   };
+  const getSROScheduleOptions = () => {
+    const saleType = retrieveProductValues?.taxType?.saleType;
 
+    if (saleType === "Goods at Reduced Rate") {
+      return SRO_Schedule_Options_ReducedRates;
+    }
+
+    if (saleType === "Goods at zero-rate") {
+      return SRO_Schedule_Options_ZeroRate;
+    }
+
+  };
+
+  const getSROItemSerialOptions = () => {
+    const saleType = retrieveProductValues?.taxType?.saleType;
+
+    if (saleType === "Goods at Reduced Rate") {
+      return SRO_ItemSerial_Options_ReducedRates[selectedSROSchedule] || [""];
+    }
+
+    if (saleType === "Goods at zero-rate") {
+      return SRO_ItemSerial_Options_ZeroRate[selectedSROSchedule] || [""];
+    }
+
+    // default case → no serials
+    return [""];
+  };
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     setDate(today);
@@ -137,6 +166,47 @@ const Sales = () => {
       });
     }
   }, [sellerData, error])
+
+
+  useEffect(() => {
+    if (!retrieveProductValues) return;
+
+    const saleType = retrieveProductValues?.taxType?.saleType;
+    const qty = Number(formik.values.productQty || 0);
+    const price = Number(formik.values.productPrice || 0);  // MRP per unit
+
+    if (saleType === "3rd Schedule Goods" && price > 0 && qty > 0) {
+
+      const mrpTotal = price * qty;      // MRP x quantity
+      const valueExTax = (price / 1.18) * qty;   // Ex-tax total
+
+      const furtherTaxAmount =
+        retrieveValues?.customertype === "Unregistered"
+          ? valueExTax * (Number(formik.values.furtherTax || 0) / 100)
+          : 0;
+
+      formik.setFieldValue(
+        "fixedNotifiedValueOrRetailPrice",
+        mrpTotal 
+      );
+
+      formik.setFieldValue("valueWithoutTax", valueExTax.toFixed(2));
+
+    } else {
+      formik.setFieldValue("fixedNotifiedValueOrRetailPrice", 0);
+      formik.setFieldValue("valueWithoutTax", 0);
+    }
+  }, [
+    formik.values.productPrice,
+    formik.values.productQty,     // <-- THIS IS THE MISSING DEPENDENCY
+    formik.values.furtherTax,
+    retrieveProductValues,
+    retrieveValues
+  ]);
+
+
+
+
   return (
     <>
       {
@@ -165,13 +235,13 @@ const Sales = () => {
                     />
                   </div>
                   <div className="d-flex">
-                    <div className="headingWidth" style={{color: "#0A5275"}}>
+                    <div className="headingWidth" style={{ color: "#0A5275" }}>
                       <p><strong>Business Name</strong></p>
                       <p><strong>NTN/CNIC</strong></p>
                       <p><strong>Address</strong></p>
                       <p><strong>Province</strong></p>
                     </div>
-                    <div style={{color: "#0A5275"}}>
+                    <div style={{ color: "#0A5275" }}>
                       <p><strong>{sellerInfo?.BusinessName}</strong></p>
                       <p><strong>{sellerInfo?.NTNCNIC}</strong></p>
                       <p><strong>{sellerInfo?.Address}</strong></p>
@@ -214,7 +284,7 @@ const Sales = () => {
                               }
                             }}
                             style={{
-                              borderColor: "#0A5275", backgroundColor: "#d9edf2", 
+                              borderColor: "#0A5275", backgroundColor: "#d9edf2",
                               backdropFilter: "blur(6px)", color: "#0A5275"
                             }}
                           >
@@ -271,8 +341,10 @@ const Sales = () => {
                                       setSelectedScenarioId(e.target.value);
                                     }}
                                     onBlur={formik.handleBlur}
-                                    style={{ borderColor: "#0A5275",  backgroundColor: "#d9edf2",
-                              backdropFilter: "blur(6px)",color: "#0A5275" }}
+                                    style={{
+                                      borderColor: "#0A5275", backgroundColor: "#d9edf2",
+                                      backdropFilter: "blur(6px)", color: "#0A5275"
+                                    }}
                                   >
                                     <option value="">Select Scenario Id</option>
                                     {item.paragraphDetail.map((sid, i) => (
@@ -307,8 +379,8 @@ const Sales = () => {
               <div
                 className="card p-4"
                 style={{
-                background: "rgba(255,255,255,0.88)",
-                      backdropFilter: "blur(6px)",
+                  background: "rgba(255,255,255,0.88)",
+                  backdropFilter: "blur(6px)",
                   borderRadius: "15px",
                   boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
                   color: "#0A5275",
@@ -458,37 +530,203 @@ const Sales = () => {
                       className="form-control my-2"
                       type="number"
                       value={
-                        formik.values.productQty && formik.values.productPrice
-                          ? formik.values.productQty * formik.values.productPrice
-                          : 0
+                        retrieveProductValues?.taxType?.saleType === "3rd Schedule Goods"
+                          ? (formik.values.productQty * formik.values.productPrice).toFixed(2)
+                          : (formik.values.productQty * formik.values.productPrice)
                       }
+
                       readOnly
                       style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
                     />
                   </div>
 
-                  {/* Value Sales Tax */}
+                  {/* Value All Taxes */}
                   <div className="inputLabelData" style={{ marginBottom: "10px" }}>
-                    <label className="w-25" style={{ fontWeight: "600" }}>Value (Sales Tax)</label>
+                    <label className="w-25" style={{ fontWeight: "600" }}>Total Value (All Taxes)</label>
                     <input
                       className="form-control my-2"
                       type="number"
                       value={
-                        formik.values.productQty && formik.values.productPrice
-                          ? (
-                            (Number(formik.values.productPrice * formik.values.productQty) *
+                        retrieveProductValues?.taxType?.saleType === "3rd Schedule Goods"
+                          ? (() => {
+                            const qty = Number(formik.values.productQty || 0);
+                            const price = Number(formik.values.productPrice || 0);
+
+                            // 1. Ex-sales tax value (base value)
+                            const exValue = qty * price;
+
+                            // 2. Sales Tax = 18% of user-entered fixed notified value
+                            const fnv = Number(formik.values.fixedNotifiedValueOrRetailPrice || 0);
+                            const salesTax = fnv * 0.18;
+
+                            // 3. Further Tax (ONLY for unregistered)
+                            const furtherTax =
+                              retrieveValues?.customertype === "Unregistered"
+                                ? (fnv) * (Number(formik.values.furtherTax || 0) / 100)
+                                : 0;
+
+                            // 4. Final total
+                            return ( salesTax + furtherTax + fnv ).toFixed(2);
+                          })()
+
+                          : (
+                            // Normal goods (unchanged logic)
+                            (formik.values.productQty * formik.values.productPrice) +
+                            ((formik.values.productQty * formik.values.productPrice) *
                               (Number(retrieveProductValues?.taxType?.salesTaxValue / 100))) +
-                            (formik.values.productPrice * formik.values.productQty) +
                             (retrieveValues?.customertype === "Unregistered"
-                              ? Number(formik.values?.furtherTax / 100) * (formik.values.productPrice * formik.values.productQty)
+                              ? (formik.values.productQty * formik.values.productPrice) *
+                              (formik.values.furtherTax / 100)
                               : 0)
                           ).toFixed(2)
-                          : 0
                       }
+
+
+
                       readOnly
                       style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
                     />
                   </div>
+
+                  {/* Advanced options Menu Start */}
+
+                  {/* --- Advanced Options Toggle --- */}
+                  <div className="my-3">
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary"
+                      style={{ borderColor: "#0A5275", color: "#0A5275" }}
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                    >
+                      {showAdvanced ? "Hide Advanced Options ▲" : "Show Advanced Options ▼"}
+                    </button>
+                  </div>
+
+                  {/* --- Advanced Collapsible Panel --- */}
+                  {showAdvanced && (
+                    <div
+                      className="p-3 mt-2"
+                      style={{
+                        background: "#eef7fa",
+                        borderRadius: "10px",
+                        border: "1px solid #0A5275",
+                      }}
+                    >
+                      {/* --- SRO Schedule No --- */}
+                      <div className="inputLabelData mb-2">
+                        <label className="w-25 fw-bold">SRO Schedule No</label>
+
+                        <select
+                          name="sroScheduleNo"
+                          className="form-select"
+                          value={formik.values.sroScheduleNo}
+                          onChange={(e) => {
+                            const schedule = e.target.value;
+                            formik.setFieldValue("sroScheduleNo", schedule);
+                            setSelectedSROSchedule(schedule);
+                            formik.setFieldValue("sroItemSerialNo", ""); // reset item serial
+                          }}
+                          style={{ borderColor: "#0A5275" }}
+                        >
+                          {getSROScheduleOptions()?.map((item, idx) => (
+                            <option key={idx} value={item}>
+                              {item || "Select Schedule No"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* --- SRO Item Serial No --- */}
+                      <div className="inputLabelData mb-2">
+                        <label className="w-25 fw-bold">SRO Item Serial No</label>
+
+                        <select
+                          name="sroItemSerialNo"
+                          className="form-select"
+                          value={formik.values.sroItemSerialNo}
+                          onChange={formik.handleChange}
+                          style={{ borderColor: "#0A5275" }}
+                        >
+                          {getSROItemSerialOptions()?.map((item, idx) => (
+                            <option key={idx} value={item}>
+                              {item || "Select Item Serial"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* --- Extra Tax --- */}
+                      <div className="inputLabelData mb-2">
+                        <label className="w-25 fw-bold">Extra Tax</label>
+                        <input
+                          type="text"
+                          name="extraTax"
+                          className="form-control"
+                          value={formik.values.extraTax}
+                          onChange={formik.handleChange}
+                          style={{ borderColor: "#0A5275" }}
+                        />
+                      </div>
+
+                      {/* --- Sales Tax Withheld at Source --- */}
+                      <div className="inputLabelData mb-2">
+                        <label className="w-25 fw-bold">Sales Tax Withheld at Source</label>
+                        <input
+                          type="number"
+                          name="salesTaxWithheldAtSource"
+                          className="form-control"
+                          value={formik.values.salesTaxWithheldAtSource}
+                          onChange={formik.handleChange}
+                          style={{ borderColor: "#0A5275" }}
+                        />
+                      </div>
+
+                      {/* --- Fixed Notified Retail Price (numeric zero by default) --- */}
+                      <div className="inputLabelData mb-2">
+                        <label className="w-25 fw-bold">Fixed Notified Retail Price</label>
+                        <input
+                          type="number"
+                          name="fixedNotifiedValueOrRetailPrice"
+                          className="form-control"
+                          value={formik.values.fixedNotifiedValueOrRetailPrice || 0}
+                          onChange={formik.handleChange}
+                          style={{ borderColor: "#0A5275" }}
+                        />
+                      </div>
+
+                      {/* --- FED Payable (disabled) --- */}
+                      <div className="inputLabelData mb-2">
+                        <label className="w-25 fw-bold">FED Payable</label>
+                        <input
+                          type="number"
+                          name="fedPayable"
+                          className="form-control"
+                          value={formik.values.fedPayable}
+                          disabled
+                          style={{ borderColor: "#0A5275", backgroundColor: "#e5e5e5" }}
+                        />
+                      </div>
+
+                      {/* --- Discount (disabled) --- */}
+                      <div className="inputLabelData mb-2">
+                        <label className="w-25 fw-bold">Discount</label>
+                        <input
+                          type="number"
+                          name="discount"
+                          className="form-control"
+                          value={formik.values.discount}
+                          disabled
+                          style={{ borderColor: "#0A5275", backgroundColor: "#e5e5e5" }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+
+
+                  {/* Advanced options Menu End */}
+
+
 
                   {/* Add / Update Button */}
                   {editModeAndProductNameAndCustomerValue.editMode ? (

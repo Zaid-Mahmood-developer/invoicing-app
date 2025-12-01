@@ -3,7 +3,7 @@ import * as Yup from "yup";
 export const products = [
   { formLabelClass: "form-label", inputClass: "form-control", labelName: "HS Code:", name: "hsCode", type: "text", placeholder: "HS Code (####.####)" },
   { formLabelClass: "form-label", inputClass: "form-control", labelName: "Product Description:", name: "description", type: "text", placeholder: "Description" },
-  { formLabelClass: "form-label", inputClass: "form-control", labelName: "Unit of Measure (UoM):", name: "uom", type: "dropdownUnit", placeholder: "Unit (e.g., Numbers , kg, pcs , PKTs)", options: ["Numbers", "KG", "pieces", "PKTs"] },
+  { formLabelClass: "form-label", inputClass: "form-control", labelName: "Unit of Measure (UoM):", name: "uom", type: "dropdownUnit", placeholder: "Unit (e.g., Numbers , kg, pcs , PKTs)", options: ["Numbers ,  pieces , units", "KG", "PKTs", "Liter"] },
   {
     formLabelClass: "form-label", inputClass: "form-control", labelName: "Tax Type", name: "taxType", type: "text", placeholder: "Enter tax type", type: "dropdown",
     options: [
