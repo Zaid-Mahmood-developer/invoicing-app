@@ -2,41 +2,45 @@ import { MdOutlineCrisisAlert } from "react-icons/md";
 import { TbReceiptTax } from "react-icons/tb";
 import { GiReturnArrow } from "react-icons/gi";
 
-export const tile = [
+export const todayTile = [
   {
     icon: MdOutlineCrisisAlert,
     title: "Total Sales",
-    key: "todaySales",
+    key: "todaySales.totalAmount",
     currentTime: "Today",
   },
   {
     icon: TbReceiptTax,
     title: "Total Invoices",
-    key: "todayInvoiceCount",
+    key: "todaySales.invoiceCount",
     currentTime: "Today",
   },
   {
     icon: GiReturnArrow,
-    title: "Total Returns",
-    key: "todayReturns",
+    title: "Total Tax",
+    key: "todaySales.totalTax",
     currentTime: "Today",
-  },
+  }
+];
+
+export const monthTile = [
   {
     icon: MdOutlineCrisisAlert,
     title: "Monthly Sales",
-    key: "monthSales",
+    key: "monthlySales.totalAmount",
     currentTime: "Current Month",
   },
   {
     icon: TbReceiptTax,
     title: "Monthly Invoices",
-    key: "monthInvoiceCount",
+    key: "monthlySales.invoiceCount",
     currentTime: "Current Month",
   },
   {
     icon: GiReturnArrow,
-    title: "Monthly Returns",
-    key: "monthReturns",
+    title: "Monthly Tax",
+    key: "monthlySales.totalTax",
     currentTime: "Current Month",
   },
 ];
+

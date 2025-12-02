@@ -28,7 +28,7 @@ const Sales = () => {
   const [sellerInfo, setSellerInfo] = useState(null);
   const formik = useFormik({
     initialValues,
-    validationSchema,
+    validationSchema ,
     onSubmit: (values, { resetForm }) => {
       const beforeTax = values.productQty * values.productPrice;
       const price = values.productPrice;
@@ -127,7 +127,6 @@ const Sales = () => {
       return SRO_ItemSerial_Options_ZeroRate[selectedSROSchedule] || [""];
     }
 
-    // default case → no serials
     return [""];
   };
   useEffect(() => {
@@ -173,12 +172,12 @@ const Sales = () => {
 
     const saleType = retrieveProductValues?.taxType?.saleType;
     const qty = Number(formik.values.productQty || 0);
-    const price = Number(formik.values.productPrice || 0);  // MRP per unit
+    const price = Number(formik.values.productPrice || 0);
 
     if (saleType === "3rd Schedule Goods" && price > 0 && qty > 0) {
 
-      const mrpTotal = price * qty;      // MRP x quantity
-      const valueExTax = (price / 1.18) * qty;   // Ex-tax total
+      const mrpTotal = price * qty;
+      const valueExTax = (price / 1.18) * qty;
 
       const furtherTaxAmount =
         retrieveValues?.customertype === "Unregistered"
@@ -187,7 +186,7 @@ const Sales = () => {
 
       formik.setFieldValue(
         "fixedNotifiedValueOrRetailPrice",
-        mrpTotal 
+        mrpTotal
       );
 
       formik.setFieldValue("valueWithoutTax", valueExTax.toFixed(2));
@@ -198,14 +197,21 @@ const Sales = () => {
     }
   }, [
     formik.values.productPrice,
-    formik.values.productQty,     // <-- THIS IS THE MISSING DEPENDENCY
+    formik.values.productQty,
     formik.values.furtherTax,
     retrieveProductValues,
     retrieveValues
   ]);
 
+useEffect(() => {
+  if(retrieveProductValues?.taxType?.saleType == "3rd Schedule Goods") {
+  const qty = parseFloat(formik.values.productQty) || 0;
+  const price = parseFloat(formik.values.productPrice) || 0;
+  const valueExTax = qty * price;
 
-
+  formik.setFieldValue("valueWithoutTax", valueExTax);
+  }
+}, [formik.values.productQty, formik.values.productPrice]);
 
   return (
     <>
@@ -441,7 +447,7 @@ const Sales = () => {
                         <>
                           <p className="m-0 py-2"><strong>{retrieveProductValues?.hsCode}</strong></p>
                           <p className="m-0 py-2"><strong>{retrieveProductValues?.uom}</strong></p>
-                          <p className="m-0 py-2"><strong>{retrieveProductValues?.taxType?.descriptionType}</strong></p>
+                          <p className="m-0 py-2"><strong>{retrieveProductValues?.taxType?.saleType}</strong></p>
                         </>
                       ) : (
                         <>
@@ -566,7 +572,7 @@ const Sales = () => {
                                 : 0;
 
                             // 4. Final total
-                            return ( salesTax + furtherTax + fnv ).toFixed(2);
+                            return (salesTax + furtherTax + fnv).toFixed(2);
                           })()
 
                           : (
@@ -688,12 +694,24 @@ const Sales = () => {
                           type="number"
                           name="fixedNotifiedValueOrRetailPrice"
                           className="form-control"
-                          value={formik.values.fixedNotifiedValueOrRetailPrice || 0}
-                          onChange={formik.handleChange}
+                          value={formik.values.fixedNotifiedValueOrRetailPrice}
+                          onChange={(e) =>
+                            formik.setFieldValue(
+                              "fixedNotifiedValueOrRetailPrice",
+                              e.target.value === "" ? 0 : parseFloat(e.target.value)
+                            )
+                          }
                           style={{ borderColor: "#0A5275" }}
                         />
                       </div>
-
+                      <div>
+                        {formik.touched.fixedNotifiedValueOrRetailPrice &&
+                          formik.errors.fixedNotifiedValueOrRetailPrice && (
+                            <div className="text-danger text-center">
+                              {formik.errors.fixedNotifiedValueOrRetailPrice}
+                            </div>
+                          )}
+                      </div>
                       {/* --- FED Payable (disabled) --- */}
                       <div className="inputLabelData mb-2">
                         <label className="w-25 fw-bold">FED Payable</label>

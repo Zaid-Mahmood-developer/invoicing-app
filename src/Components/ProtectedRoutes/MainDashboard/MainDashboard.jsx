@@ -1,30 +1,37 @@
-import { tile } from "./dummyUtils";
-import { useNavigate } from "react-router-dom";
-import { useGetApi } from "../../../customhooks/useGetApi";
-import Swal from "sweetalert2";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { todayTile, monthTile } from "./dummyUtils";
+import { useGetApi } from "../../../customhooks/useGetApi";
 import { handlePrint, invoiceData } from "../../Invoices/InvoiceTemplate";
 import InvoicePdf from "../../Invoices/InvoicePdf";
+
 const MainDashboard = () => {
     const getUrl = `${import.meta.env.VITE_API_URL}dashboard`;
     const [dashboardData, setDashboardData] = useState(null);
     const navigate = useNavigate();
     const { data, loading, error, fetchData } = useGetApi(getUrl);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        if (error) {
+            Swal.fire("Error", error.message || "Something went wrong", "error");
+        } else if (data) {
+            setDashboardData(data.data);
+        }
+    }, [data, error]);
+
+    // Helper to access nested keys like "todaySales.totalAmount"
+    const getValue = (path) =>
+        path.split(".").reduce((obj, key) => obj?.[key], dashboardData);
+
     const navigateFunc = () => {
         navigate("/creditnote");
     };
 
-    useEffect(() => {
-        if (data?.success) {
-            setDashboardData(data?.data)
-        }
-        if (error) {
-            Swal.fire("Error", error.message || "Something went wrong", "error");
-        }
-    }, [data, error])
-    useEffect(() => {
-        fetchData()
-    }, [])
     return (
         <div
             className="container-fluid main-dashboard vh-100 p-4"
@@ -45,14 +52,16 @@ const MainDashboard = () => {
                 }}
             >
                 <p className="mb-0">
-                    Welcome, <span className="fw-bold">AHS</span>
+                    Welcome,{" "}
+                    <span className="fw-bold">
+                        {dashboardData?.recentInvoices[0]?.sellerBusinessName || "User"}
+                    </span>
                 </p>
-
             </div>
 
             {/* Tiles */}
             <div className="mainTileWrapper d-flex justify-content-between mt-4 flex-wrap gap-4">
-                {tile.map((item, id) => {
+                {[...todayTile, ...monthTile].map((item, id) => {
                     const Icon = item.icon;
                     return (
                         <div
@@ -71,15 +80,13 @@ const MainDashboard = () => {
                                     <Icon className="fs-2" />
                                 </div>
                                 <div>
-                                    <p className="mb-0">{item.title}</p>
+                                    <h5 className="mb-0">{item.title}</h5>
                                     <h3 className="mb-0">
-                                        {dashboardData?.[item.key] !== undefined
-                                            ? Number(dashboardData[item.key]).toFixed(2)
-                                            : "--"}
+                                        {getValue(item.key) !== undefined
+                                            ? Number(getValue(item.key)).toFixed(2)
+                                            : "0"}
                                     </h3>
-                                    <small>{item.currentTime}</small>
-
-
+                                    <p className="mb-0">{item.currentTime}</p>
                                 </div>
                             </div>
                         </div>
@@ -92,7 +99,8 @@ const MainDashboard = () => {
                 <h3 className="py-4" style={{ color: "#E0E7E9" }}>
                     Today Sales Breakdown
                 </h3>
-                <div className="table-responsive shadow-lg rounded-4 p-3 mt-4"
+                <div
+                    className="table-responsive shadow-lg rounded-4 p-3 mt-4"
                     style={{
                         background: "rgba(255,255,255,0.88)",
                         backdropFilter: "blur(6px)",
@@ -107,13 +115,15 @@ const MainDashboard = () => {
                             boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
                         }}
                     >
-                        <thead >
+                        <thead>
                             <tr>
                                 <th className="py-2 px-4 text-uppercase">Date</th>
                                 <th className="py-2 px-4 text-uppercase">Invoice #</th>
                                 <th className="py-2 px-4 text-uppercase">Customer</th>
-                                <th className="py-2 px-4 text-uppercase">Amount</th>
-                                <th className="py-2 px-4 text-uppercase">Tax</th>
+                                <th className="py-2 px-4 text-uppercase">Qunatity</th>
+                                <th className="py-2 px-4 text-uppercase">Price</th>
+                                <th className="py-2 px-4 text-uppercase">Sales Tax</th>
+                                <th className="py-2 px-4 text-uppercase">Further Tax Amount</th>
                                 <th className="py-2 px-4 text-uppercase">Total</th>
                                 <th colSpan={2} className="py-2 px-4 text-uppercase">
                                     View
@@ -121,33 +131,38 @@ const MainDashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>20-10-2023</td>
-                                <td>INV-001</td>
-                                <td>John Doe</td>
-                                <td>$500</td>
-                                <td>$50</td>
-                                <td>$550</td>
-                                <td>
-                                    <button onClick={handlePrint} className="btn btn-sm btn-primary">View</button>
-                                </td>
-                                <td style={{ display: "none" }}>
-                                    <InvoicePdf invoice={invoiceData} />
-                                </td>
-                                <td>
-                                    <button onClick={navigateFunc} className="btn btn-sm btn-success">
-                                        Credit Note
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr style={{ fontWeight: "600", backgroundColor: "rgba(241,247,251,0.8)" }}>
-                                <td>Total:</td>
-                                <td colSpan={2}></td>
-                                <td>$118</td>
-                                <td>$18</td>
-                                <td colSpan={3}></td>
-                            </tr>
+                            {dashboardData?.recentInvoices?.length > 0 && (
+                                // If recentInvoices is an array
+                                dashboardData.recentInvoices.map((invoice, invoiceIndex) => (
+                                    invoice.items.map((item, itemIndex) => (
+                                        <tr key={`${invoiceIndex}-${itemIndex}`}>
+                                            <td>{invoice.invoiceDate}</td>
+                                            <td>{invoice.fbrResponse}</td>
+                                            <td>{invoice.sellerBusinessName}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>{item.price}</td>
+                                            <td>{item.rate}</td>
+                                            <td>{item.furtherTax}</td>
+                                            <td>{item.totalValues}</td>
+                                            <td>
+                                                <button onClick={handlePrint} className="btn btn-sm btn-primary">
+                                                    View
+                                                </button>
+                                            </td>
+                                            <td style={{ display: "none" }}>
+                                                <InvoicePdf invoice={invoiceData} />
+                                            </td>
+                                            <td>
+                                                <button onClick={navigateFunc} className="btn btn-sm btn-success">
+                                                    Credit Note
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ))
+                            )}
                         </tbody>
+
                     </table>
                 </div>
             </div>
