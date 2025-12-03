@@ -45,13 +45,11 @@ const SalesInvoice = ({
         sellerBusinessName: signupValues?.BusinessName,
         sellerProvince: signupValues?.Province,
         sellerAddress: signupValues?.Address,
-
         buyerNTNCNIC: buyerValues?.ntnCnic,
         buyerBusinessName: buyerValues?.name,
         buyerProvince: buyerValues?.province,
         buyerAddress: buyerValues?.address,
         buyerRegistrationType: buyerValues?.customertype,
-
         invoiceRefNo: "",
         scenarioId: selectedScenarioId,
         items: submitInvoiceData,

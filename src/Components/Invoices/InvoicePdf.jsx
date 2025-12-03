@@ -1,169 +1,204 @@
-import logo from "../../assets/logo/logo-2.png";
-import fbrLogo from "../../assets/logo/digitalInvoicingSystem-logo.png"
+import QRCode from "react-qr-code";
+import logo from "../../assets/logo/logo-2.png"; 
+import fbrLogo from "../../assets/logo/digitalInvoicingSystem-logo.png";
+
 const InvoicePdf = ({ invoice }) => {
     return (
         <div
             id="invoice"
-            style={{ width: "800px", margin: "0 auto", fontFamily: "Arial" }}
+            style={{
+                width: "800px",
+                margin: "0 auto",
+                fontFamily: "Arial",
+                padding: "25px",
+                color: "#222",
+                lineHeight: "1.4",
+            }}
         >
+
             {/* HEADER */}
             <div
                 style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    marginBottom: "20px",
+                    alignItems: "center",
+                    marginBottom: "25px",
                 }}
             >
-
-
-                <div style={{ textAlign: "right" }}>
-                    <img src={logo} width="100" alt="logo" />
-                </div>
+                {/* LEFT */}
                 <div>
-                    <h2 style={{ margin: 0 }}>Invoice {invoice.number}</h2>
-                    <p style={{ margin: 0, fontSize: "12px" }}>
-                        Invoice date: {invoice.invoiceDate}
-                        <br />
-                        Due date: {invoice.dueDate}
-                        <br />
-                        Customer Code: {invoice.customerCode}
-                        <br />
-                        FBR POS ID: {invoice.fbrPosId}
+                    {/* <img src={logo} width="130" alt="DevOx Syndicate" /> */}
+                    <h2 style={{ marginTop: "10px", color: "#0A5275" }}>
+                        {invoice?.sellerBusinessName}
+                    </h2>
+                </div>
+
+                {/* RIGHT */}
+                <div style={{ textAlign: "right" }}>
+                    <h1 style={{ margin: 0, fontSize: "26px", color: "#0A5275" }}>
+                        Invoice # &nbsp; {invoice?.fbrResponse}
+                    </h1>
+
+                    <p style={{ margin: "8px 0", fontSize: "13px" }}>
+                        <strong>Date:</strong> {invoice?.invoiceDate}<br />
+                        <strong>NTN:</strong> {invoice?.sellerNTNCNIC}<br />
+                        <strong>Province:</strong> {invoice?.sellerProvince}<br />
+                        <strong>Address:</strong> {invoice?.sellerAddress}
                     </p>
                 </div>
             </div>
 
-            <hr />
+            <hr style={{ border: "0.5px solid #ddd", margin: "20px 0" }} />
 
-            {/* FROM / TO */}
+            {/* FROM & TO SECTIONS */}
             <div
                 style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    margin: "20px 0",
+                    marginBottom: "25px",
+                    gap: "20px",
                 }}
             >
+                {/* FROM */}
                 <div
                     style={{
-                        border: "1px solid #ccc",
-                        padding: "10px",
-                        width: "45%",
+                        border: "1px solid #ddd",
+                        padding: "15px",
+                        width: "50%",
+                        background: "#f8f9fa",
+                        borderRadius: "6px",
                     }}
                 >
-                    <strong>From</strong>
-                    <br />
-                    {invoice.from.name}
-                    <br />
-                    {invoice.from.address}
-                    <br />
-                    Phone: {invoice.from.phone}
-                    <br />
-                    Email: {invoice.from.email}
-                    <br />
-                    NTN: {invoice.from.ntn}
-                    <br />
+                    <h3 style={{ margin: "0 0 10px 0", color: "#0A5275" }}>From</h3>
+                    <p style={{ margin: 0, fontSize: "13px" }}>
+                        {invoice?.sellerBusinessName}<br />
+                        {invoice?.sellerAddress}<br />
+                        NTN/CNIC: {invoice?.sellerNTNCNIC}
+                    </p>
                 </div>
 
+                {/* TO */}
                 <div
                     style={{
-                        border: "1px solid #ccc",
-                        padding: "10px",
-                        width: "45%",
+                        border: "1px solid #ddd",
+                        padding: "15px",
+                        width: "50%",
+                        background: "#f8f9fa",
+                        borderRadius: "6px",
                     }}
                 >
-                    <strong>To</strong>
-                    <br />
-                    {invoice.to.name}
-                    <br />
-                    {invoice.to.address}
-                    <br />
-                    NTN: {invoice.to.ntn}
-                    <br />
+                    <h3 style={{ margin: "0 0 10px 0", color: "#0A5275" }}>To</h3>
+                    <p style={{ margin: 0, fontSize: "13px" }}>
+                        {invoice?.buyerBusinessName}<br />
+                        {invoice?.buyerAddress}<br />
+                        NTN/CNIC: {invoice?.buyerNTNCNIC}
+                    </p>
                 </div>
             </div>
 
-            {/* TABLE */}
+            {/* ITEMS TABLE */}
             <table
                 width="100%"
-                border="1"
+                border="0"
                 cellSpacing="0"
-                cellPadding="6"
+                cellPadding="8"
                 style={{
                     fontSize: "12px",
                     borderCollapse: "collapse",
+                    marginTop: "10px",
+                    width: "100%",
                 }}
             >
                 <thead>
-                    <tr style={{ background: "#f2f2f2", textAlign: "left" }}>
-                        <th>Description</th>
-                        <th>GST</th>
-                        <th>Unit Price</th>
+                    <tr style={{ background: "#0A5275", color: "white", textAlign: "left" }}>
+                        <th>HS Code</th>
+                        <th>Sale Type</th>
+                        <th>Price</th>
                         <th>Qty</th>
                         <th>Unit</th>
-                        <th>Total (excl.)</th>
-                        <th>Total (incl.)</th>
+                        <th>Tax %</th>
+                        <th>ST Amount</th>
+                        <th>Further Tax</th>
+                        <th>Excl. Tax</th>
+                        <th>Total</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    {invoice.items.map((item, idx) => (
-                        <tr key={idx}>
-                            <td>{item.description}</td>
-                            <td>{item.gst}</td>
-                            <td>{item.unitPrice}</td>
-                            <td>{item.qty}</td>
-                            <td>{item.unit}</td>
-                            <td>{item.totalExcl}</td>
-                            <td>{item.totalIncl}</td>
+                    {invoice?.items?.map((item, idx) => (
+                        <tr
+                            key={idx}
+                            style={{
+                                borderBottom: "1px solid #eee",
+                                background: idx % 2 === 0 ? "#fafafa" : "white",
+                            }}
+                        >
+                            <td>{item.hsCode}</td>
+                            <td>{item.saleType}</td>
+                            <td>{item.price}</td>
+                            <td>{item.quantity}</td>
+                            <td>{item.uoM}</td>
+                            <td>{item.rate}</td>
+                            <td>{item.salesTaxApplicable}</td>
+                            <td>{item.furtherTax}</td>
+                            <td>{item.valueSalesExcludingST}</td>
+                            <td><strong>{item.totalValues}</strong></td>
                         </tr>
                     ))}
                 </tbody>
             </table>
 
-            {/* TOTALS */}
-            <div style={{display : "flex", justifyContent : "space-between" , alignItems : "center"}}>
-                <div>
-                    <img style={{width : "100px"}} src={fbrLogo} alt="fbr-logo" />
+            {/* QR + SUMMARY */}
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: "30px",
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                    <QRCode
+                        size={256}
+                        style={{ height: "auto", maxWidth: "90px" }}
+                        value={invoice?.fbrResponse || "No Data"}
+                        viewBox={`0 0 256 256`}
+                    />
+                    <img style={{ width: "120px" }} src={fbrLogo} alt="fbr-logo" />
                 </div>
 
                 <div
                     style={{
-
-                        fontSize: "13px",
+                        fontSize: "16px",
+                        padding: "15px 25px",
+                        border: "1px solid #ddd",
+                        background: "#f8f9fa",
+                        borderRadius: "8px",
+                        textAlign: "right",
                     }}
                 >
-                    <p>Total (excl. tax): {invoice.summary.totalExcl}</p>
-                    <p>Total GST 25%: {invoice.summary.gst25}</p>
-                    <p>Total GST 18%: {invoice.summary.gst18}</p>
-                    <p>FED Payable: {invoice.summary.fed}</p>
-                    <h3>Total (incl. tax): {invoice.summary.totalIncl}</h3>
+                    <h2 style={{ margin: 0, color: "#0A5275" }}>
+                        Grand Total: {invoice?.grandTotal}
+                    </h2>
                 </div>
             </div>
 
-
-
-            <hr />
-
-
+            <hr style={{ border: "0.5px solid #ddd", margin: "20px 0" }} />
 
             {/* FOOTER */}
             <div
                 style={{
                     textAlign: "center",
                     fontSize: "12px",
-                    marginTop: "20px",
+                    marginTop: "10px",
+                    color: "#555",
                 }}
             >
-                <strong>WWW.TIER3.PK</strong>
-                <br />
-                Registered Office: {invoice.from.address}
-                <br />
-                Phone: {invoice.from.phone} — Email: {invoice.from.email}
-                <br />
-                NTN: {invoice.from.ntn}
+                <strong>WWW.{invoice?.sellerBusinessName}.PK</strong><br />
+                NTN/CNIC: {invoice?.sellerNTNCNIC}
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default InvoicePdf
+export default InvoicePdf;

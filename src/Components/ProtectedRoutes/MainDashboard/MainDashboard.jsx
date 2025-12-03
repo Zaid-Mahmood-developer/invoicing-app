@@ -3,10 +3,35 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { todayTile, monthTile } from "./dummyUtils";
 import { useGetApi } from "../../../customhooks/useGetApi";
-import { handlePrint, invoiceData } from "../../Invoices/InvoiceTemplate";
 import InvoicePdf from "../../Invoices/InvoicePdf";
-
 const MainDashboard = () => {
+    const [invoiceData, setInvoiceData] = useState(null);
+    const handlePrint = (fbrId, data) => {
+        const findData = data?.recentInvoices.find(inv => inv._id === fbrId);
+        setInvoiceData(findData);
+
+        setTimeout(() => {
+            const invoiceEl = document.getElementById("invoice");
+            if (!invoiceEl) {
+                console.error("Invoice html not found");
+                return;
+            }
+
+            const html = invoiceEl.innerHTML;
+            const printWindow = window.open("", "_blank");
+
+            printWindow.document.write(`
+            <html>
+            <head><title>Invoice</title></head>
+            <body>${html}
+                <script>window.onload = () => window.print();<\/script>
+            </body>
+            </html>
+        `);
+
+            printWindow.document.close();
+        }, 300); // wait for InvoicePdf to render
+    };
     const getUrl = `${import.meta.env.VITE_API_URL}dashboard`;
     const [dashboardData, setDashboardData] = useState(null);
     const navigate = useNavigate();
@@ -24,7 +49,6 @@ const MainDashboard = () => {
         }
     }, [data, error]);
 
-    // Helper to access nested keys like "todaySales.totalAmount"
     const getValue = (path) =>
         path.split(".").reduce((obj, key) => obj?.[key], dashboardData);
 
@@ -132,7 +156,6 @@ const MainDashboard = () => {
                         </thead>
                         <tbody>
                             {dashboardData?.recentInvoices?.length > 0 && (
-                                // If recentInvoices is an array
                                 dashboardData.recentInvoices.map((invoice, invoiceIndex) => (
                                     invoice.items.map((item, itemIndex) => (
                                         <tr key={`${invoiceIndex}-${itemIndex}`}>
@@ -145,13 +168,11 @@ const MainDashboard = () => {
                                             <td>{item.furtherTax}</td>
                                             <td>{item.totalValues}</td>
                                             <td>
-                                                <button onClick={handlePrint} className="btn btn-sm btn-primary">
+                                                <button onClick={() => handlePrint(invoice._id, dashboardData)} className="btn btn-sm btn-primary">
                                                     View
                                                 </button>
                                             </td>
-                                            <td style={{ display: "none" }}>
-                                                <InvoicePdf invoice={invoiceData} />
-                                            </td>
+
                                             <td>
                                                 <button onClick={navigateFunc} className="btn btn-sm btn-success">
                                                     Credit Note
@@ -165,6 +186,9 @@ const MainDashboard = () => {
 
                     </table>
                 </div>
+            </div>
+            <div id="invoice" style={{ display: "none" }}>
+                <InvoicePdf invoice={invoiceData} />
             </div>
         </div>
     );

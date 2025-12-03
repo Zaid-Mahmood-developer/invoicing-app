@@ -13,7 +13,7 @@ const CreditNote = () => {
   const [retrieveValues, setRetriveValues] = useState(null);
   const [retrieveProductValues, setRetriveProductValues] = useState(null);
   const [getProductsData, setGetProductsData] = useState([]);
-  const [editModeAndProductNameAndCustomerValue, setEditModeAndProductNameAndCustomerValue] = useState({ editMode: false, editProductName: false, customerValue: ""});
+  const [editModeAndProductNameAndCustomerValue, setEditModeAndProductNameAndCustomerValue] = useState({ editMode: false, editProductName: false, customerValue: "" });
   const [editIndex, setEditIndex] = useState(null);
   const [date, setDate] = useState("");
 
@@ -23,12 +23,12 @@ const CreditNote = () => {
     validationSchema,
     onSubmit: (values, { resetForm }) => {
       const beforeTax = values.productQty * values.productPrice;
-   
-      let afterTax = beforeTax +  (beforeTax * ( retrieveProductValues?.taxType?.salesTaxValue / 100));
-      console.log(afterTax , "afterTax22")
+
+      let afterTax = beforeTax + (beforeTax * (retrieveProductValues?.taxType?.salesTaxValue / 100));
+      console.log(afterTax, "afterTax22")
       if (retrieveValues?.customertype === "Unregistered" && values.furtherTax) {
         values.furtherTax = Number(values.furtherTax)
-        afterTax += (beforeTax * (values.furtherTax /100))
+        afterTax += (beforeTax * (values.furtherTax / 100))
       }
       if (editModeAndProductNameAndCustomerValue.editMode && editIndex !== null) {
         const updated = [...getProductsData];
@@ -112,27 +112,31 @@ const CreditNote = () => {
   useEffect(() => {
     localStorage.setItem("invoiceItems", JSON.stringify(getProductsData));
   }, [getProductsData]);
-useEffect(()=>{
-  const registeredCustomers = JSON.parse(localStorage.getItem("customers")) || [];
-  const checkTaxType = registeredCustomers?.find((item)=>(item?.name && item?.customertype) !== (retrieveValues?.name && retrieveValues?.customertype ))
-  if(checkTaxType){
-    setGetProductsData([])
-  }
-}, [retrieveValues?.customertype])
+  useEffect(() => {
+    const registeredCustomers = JSON.parse(localStorage.getItem("customers")) || [];
+    const checkTaxType = registeredCustomers?.find((item) => (item?.name && item?.customertype) !== (retrieveValues?.name && retrieveValues?.customertype))
+    if (checkTaxType) {
+      setGetProductsData([])
+    }
+  }, [retrieveValues?.customertype])
 
   return (
-    <div className="container-fluid p-4 main-dashboard h-100">
-      <h2 className="page-title mb-2">🧾 FBR Credit Note</h2>
+    <div className="container-fluid p-4 main-dashboard h-100" style={{ background: "linear-gradient(135deg, #0A5275 0%, #0b0b0b 100%)", }}>
+      <h2 className="page-title mb-2" style={{ color: "#E0E7E9" }}>🧾 FBR Credit Note</h2>
       {/* Seller Info */}
       <div className="seller-buyer-wrapper">
         <div className="my-4">
-          <div className="card px-4">
+          <div className="card px-4" style={{
+            background: "rgba(255,255,255,0.88)",
+            backdropFilter: "blur(6px)",
+            borderRadius: "15px", boxShadow: "0 6px 15px rgba(0,0,0,0.2)"
+          }}>
             <div className="d-flex justify-content-between">
-              <h2 className="my-2">{"Seller Information"}</h2>
-              <input type="date" max={new Date().toISOString().split("T")[0]} className="w-25 border-2 rounded-pill px-4 mt-2 borderClass2" value={date} onChange={(e) => setDate(e.target.value)} />
+              <h2 className="my-2" style={{ color: "#0A5275" }}>{"Seller Information"}</h2>
+              <input type="date" max={new Date().toISOString().split("T")[0]} className="w-25 border-2 rounded-pill px-4 mt-2 borderClass2" value={date} onChange={(e) => setDate(e.target.value)} style={{ borderColor: "#0A5275", backgroundColor: "#E0E7E9", color: "#0A5275" }} />
             </div>
             <div className="d-flex">
-              <div className="headingWidth">
+              <div className="headingWidth" style={{ color: "#0A5275" }}>
                 <p>
                   <strong>Business Name</strong>
                 </p>
@@ -146,7 +150,7 @@ useEffect(()=>{
                   <strong>Province</strong>
                 </p>
               </div>
-              <div>
+              <div style={{ color: "#0A5275" }}>
                 <p><strong>{signupValues?.BusinessName}</strong></p>
                 <p><strong>{signupValues?.NTNCNIC}</strong></p>
                 <p><strong>{signupValues?.Address}</strong></p>
@@ -159,12 +163,17 @@ useEffect(()=>{
         {/* Buyer Info */}
         <div className="my-4">
           {buyerInfo.map((item, id) => (
-            <div className="card px-4" key={id}>
-              <h2 className="my-2">{item.heading}</h2>
+            <div className="card px-4" key={id}
+              style={{
+                background: "rgba(255,255,255,0.88)",
+                backdropFilter: "blur(6px)", borderRadius: "15px", boxShadow: "0 6px 15px rgba(0,0,0,0.2)", color: "#0A5275", marginBottom: "15px"
+              }}
+            >
+              <h2 className="my-2" style={{ color: "#0A5275" }}>{item.heading}</h2>
               {item.type === "dropDown" && (
                 <>
-                  <div className="d-flex align-items-center">
-                    <label className="form-label w-25 fw-bold">
+                  <div className="d-flex align-items-center" style={{ marginBottom: "10px" }}>
+                    <label className="form-label w-25 fw-bold" style={{ color: "#0A5275" }}>
                       {item.paragraphHeading}
                     </label>
                     <select
@@ -180,6 +189,10 @@ useEffect(()=>{
                         formik.setFieldValue("customertype", findCustomer?.customertype || "");
                       }}
                       onBlur={formik.handleBlur}
+                      style={{
+                        borderColor: "#0A5275", backgroundColor: "#d9edf2",
+                        backdropFilter: "blur(6px)", color: "#0A5275"
+                      }}
                     >
                       <option value="">Select Business Name</option>
                       {storedData.map((customer, index) => (
@@ -222,6 +235,48 @@ useEffect(()=>{
                       )}
                     </div>
                   </div>
+                  {/* Scenario ID */}
+                  {[1]?.map((item, idx) => (
+                    <div key={idx}>
+                      <div className="d-flex align-items-center pb-1">
+                        {item.type === "dropDown" && (
+                          <>
+                            <label className="form-label w-25 fw-bold" style={{ color: "#0A5275" }}>{item.paragraphHeading}</label>
+                            <select
+                              name="scenarioId"
+                              className="form-select p-2"
+                              value={formik.values.scenarioId}
+                              onChange={(e) => {
+                                formik.handleChange(e);
+                                setSelectedScenarioId(e.target.value);
+                              }}
+                              onBlur={formik.handleBlur}
+                              style={{
+                                borderColor: "#0A5275", backgroundColor: "#d9edf2",
+                                backdropFilter: "blur(6px)", color: "#0A5275"
+                              }}
+                            >
+                              <option value="">Select Scenario Id</option>
+                              {item.paragraphDetail.map((sid, i) => (
+                                <option key={i} value={sid}>{sid}</option>
+                              ))}
+                            </select>
+                          </>
+                        )}
+                      </div>
+
+                      {item.type === "dropDown" && (
+                        <div className="ms-25" style={{ marginLeft: "25%" }}>
+                          {formik.touched.scenarioId && formik.errors.scenarioId && (
+                            <div style={{ color: "red", fontSize: "14px", marginBottom: "5px" }}>{formik.errors.scenarioId}</div>
+                          )}
+                          <div style={{ color: "red", fontSize: "13px" }}>
+                            Please select the scenario id according to your sale type and customer type
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </>
               )}
             </div>
@@ -230,8 +285,16 @@ useEffect(()=>{
       </div>
 
       {/* Add/Edit Item Section */}
-      <div  className="my-4">
-        <div className="card p-4">
+      <div className="my-4">
+        <div className="card p-4"
+        style={{
+                  background: "rgba(255,255,255,0.88)",
+                  backdropFilter: "blur(6px)",
+                  borderRadius: "15px",
+                  boxShadow: "0 6px 15px rgba(0,0,0,0.2)",
+                  color: "#0A5275",
+                }}
+        >
           <h2>{editModeAndProductNameAndCustomerValue.editMode ? "Edit Item" : "Add Item"}</h2>
           <form onSubmit={formik.handleSubmit}>
             {/* Product Dropdown */}
@@ -250,6 +313,7 @@ useEffect(()=>{
                   setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editProductName: true }))
 
                 }}
+                  style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
                 onBlur={formik.handleBlur}
               >
                 <option value="">Select Product Description</option>
@@ -298,6 +362,7 @@ useEffect(()=>{
                 value={formik.values.productQty}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                 style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
               />
             </div>
             {formik.touched.productQty && formik.errors.productQty && (
@@ -315,6 +380,8 @@ useEffect(()=>{
                 value={formik.values.productPrice}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                      style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
+
               />
             </div>
             {formik.touched.productPrice && formik.errors.productPrice && (
@@ -330,6 +397,8 @@ useEffect(()=>{
                 type="text"
                 value={retrieveProductValues?.taxType?.salesTaxValue ? `${retrieveProductValues?.taxType?.salesTaxValue}%` : "0%"}
                 readOnly
+                      style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
+
               />
             </div>
 
@@ -349,6 +418,8 @@ useEffect(()=>{
                       }
                     }}
                     onBlur={formik.handleBlur}
+                      style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
+
                   />
                 </div>
                 {formik.touched.furtherTax && formik.errors.furtherTax && (
@@ -370,6 +441,8 @@ useEffect(()=>{
                     : 0
                 }
                 readOnly
+                      style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
+
               />
             </div>
 
@@ -380,14 +453,16 @@ useEffect(()=>{
                 type="number"
                 value={
                   formik.values.productQty && formik.values.productPrice
-                    ? ( (Number(formik.values.productPrice * formik.values.productQty) * ( Number(retrieveProductValues?.taxType?.salesTaxValue / 100)) ) + (formik.values.productPrice * formik.values.productQty) +
+                    ? ((Number(formik.values.productPrice * formik.values.productQty) * (Number(retrieveProductValues?.taxType?.salesTaxValue / 100))) + (formik.values.productPrice * formik.values.productQty) +
                       (retrieveValues?.customertype === "Unregistered"
-                        ? Number(formik.values?.furtherTax / 100) * (formik.values.productPrice * formik.values.productQty) 
+                        ? Number(formik.values?.furtherTax / 100) * (formik.values.productPrice * formik.values.productQty)
                         : 0)
                     ).toFixed(2)
                     : 0
                 }
                 readOnly
+                      style={{ borderColor: "#0A5275", backgroundColor: "#d9edf2", color: "#0A5275" }}
+
               />
             </div>
 
