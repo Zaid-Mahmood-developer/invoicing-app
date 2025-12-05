@@ -89,7 +89,7 @@ const Sales = () => {
       setEditModeAndProductNameAndCustomerValue((prev) => ({ ...prev, editProductName: false }))
     },
   });
-
+console.log(getProductsData , "productsDaata")
   const handleEdit = (item, index) => {
     formik.setValues({
       customerValue: item.customerValue || "",
@@ -105,7 +105,6 @@ const Sales = () => {
   };
   const getSROScheduleOptions = () => {
     const saleType = retrieveProductValues?.taxType?.saleType;
-
     if (saleType === "Goods at Reduced Rate") {
       return SRO_Schedule_Options_ReducedRates;
     }

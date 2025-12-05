@@ -65,85 +65,85 @@ const SalesInvoice = ({
       return;
     }
 
-   const newSubmitData = getProductsData.map((item) => {
-  const {
-    hsCode,
-    description,
-    uom,
-    taxType,
-    productQty,
-    productPrice,
-    furtherTax,
-    sroScheduleNo,
-    sroItemSerialNo,
-    fixedNotifiedValueOrRetailPrice,
-    salesTaxWithheldAtSource,
-    extraTax,
-  } = item;
+    const newSubmitData = getProductsData.map((item) => {
+      const {
+        hsCode,
+        productValue,
+        uom,
+        taxType,
+        productQty,
+        productPrice,
+        furtherTax,
+        sroScheduleNo,
+        sroItemSerialNo,
+        fixedNotifiedValueOrRetailPrice,
+        salesTaxWithheldAtSource,
+        extraTax,
+      } = item;
 
-  const qty = Number(productQty) || 0;
-  const price = Number(productPrice) || 0;
+      const qty = Number(productQty) || 0;
+      const price = Number(productPrice) || 0;
 
-  let valueExcludingST = 0;
-  let salesTaxApplicable = 0;
-  let furtherTaxValue = 0;
-  let totalValues = 0;
+      let valueExcludingST = 0;
+      let salesTaxApplicable = 0;
+      let furtherTaxValue = 0;
+      let totalValues = 0;
 
-  if (taxType.saleType === "3rd Schedule Goods") {
-    valueExcludingST = qty * price;
+      if (taxType.saleType === "3rd Schedule Goods") {
+        valueExcludingST = qty * price;
 
-    const fnv = Number(fixedNotifiedValueOrRetailPrice || 0);
-    salesTaxApplicable = fnv * 0.18;
+        const fnv = Number(fixedNotifiedValueOrRetailPrice || 0);
+        salesTaxApplicable = fnv * 0.18;
 
-    if (buyerValues?.customertype === "Unregistered" && furtherTax) {
-      furtherTaxValue = fixedNotifiedValueOrRetailPrice * (Number(furtherTax) / 100);
-    } else {
-      furtherTaxValue = 0;
-    }
-    totalValues =  salesTaxApplicable + furtherTaxValue + fixedNotifiedValueOrRetailPrice;
-  }
+        if (buyerValues?.customertype === "Unregistered" && furtherTax) {
+          furtherTaxValue = fixedNotifiedValueOrRetailPrice * (Number(furtherTax) / 100);
+        } else {
+          furtherTaxValue = 0;
+        }
+        totalValues = salesTaxApplicable + furtherTaxValue + fixedNotifiedValueOrRetailPrice;
+      }
 
-  else {
-    valueExcludingST = qty * price;
-    salesTaxApplicable = valueExcludingST * (taxType.salesTaxValue / 100);
+      else {
+        valueExcludingST = qty * price;
+        salesTaxApplicable = valueExcludingST * (taxType.salesTaxValue / 100);
 
-    if (buyerValues?.customertype === "Unregistered" && furtherTax) {
-      furtherTaxValue = valueExcludingST * (Number(furtherTax) / 100);
-    }
+        if (buyerValues?.customertype === "Unregistered" && furtherTax) {
+          furtherTaxValue = valueExcludingST * (Number(furtherTax) / 100);
+        }
 
-    totalValues = valueExcludingST + salesTaxApplicable + furtherTaxValue;
-  }
+        totalValues = valueExcludingST + salesTaxApplicable + furtherTaxValue;
+      }
 
-  return {
-    hsCode,
-    productDescripion: description,
-    uoM: uom,
-    rate: `${taxType.salesTaxValue}%`,
-    saleType: taxType.saleType,
+      return {
+        hsCode,
+        productDescription: productValue,
+        uoM: uom,
+        rate: `${taxType.salesTaxValue}%`,
+        saleType: taxType.saleType,
 
-    quantity: qty,
-    price: price,
+        quantity: qty,
+        price: price,
 
-    valueSalesExcludingST: Number(valueExcludingST.toFixed(2)),
-    salesTaxApplicable: Number(salesTaxApplicable.toFixed(2)),
-    furtherTax: Number(furtherTaxValue.toFixed(2)),
-    totalValues: Number(totalValues.toFixed(2)),
+        valueSalesExcludingST: Number(valueExcludingST.toFixed(2)),
+        salesTaxApplicable: Number(salesTaxApplicable.toFixed(2)),
+        furtherTax: Number(furtherTaxValue.toFixed(2)),
+        totalValues: Number(totalValues.toFixed(2)),
 
-    sroItemSerialNo: sroItemSerialNo ?? "",
-    sroScheduleNo: sroScheduleNo ?? "",
+        sroItemSerialNo: sroItemSerialNo ?? "",
+        sroScheduleNo: sroScheduleNo ?? "",
 
-    // Send FNV only for 3rd schedule goods
-    fixedNotifiedValueOrRetailPrice:
-      taxType.saleType === "3rd Schedule Goods"
-        ? Number(fixedNotifiedValueOrRetailPrice || 0)
-        : 0,
+        // Send FNV only for 3rd schedule goods
+        fixedNotifiedValueOrRetailPrice:
+          taxType.saleType === "3rd Schedule Goods"
+            ? Number(fixedNotifiedValueOrRetailPrice || 0)
+            : 0,
 
-    salesTaxWithheldAtSource: Number(salesTaxWithheldAtSource ?? 0),
-    extraTax: extraTax ?? "",
-    fedPayable: 0,
-    discount: 0,
-  };
-});
+        salesTaxWithheldAtSource: Number(salesTaxWithheldAtSource ?? 0),
+        extraTax: extraTax ?? "",
+        fedPayable: 0,
+        discount: 0,
+      };
+    });
 
     setSubmitInvoiceData(newSubmitData);
 
@@ -215,7 +215,6 @@ const SalesInvoice = ({
 
     submitToLocalApi();
   }, [data]);
-  console.log(submitInvoiceData, "invoiceData")
   return (
     <>
       {loading ? (
@@ -256,7 +255,7 @@ const SalesInvoice = ({
                   <tr key={id} style={{ backgroundColor: "#e6f2f7" }}>
                     <th>{id + 1}</th>
                     <td>{item.hsCode}</td>
-                    <td>{item.productDescripion}</td>
+                    <td>{item.productDescription}</td>
                     <td>{item.uoM}</td>
                     <td>{item.saleType}</td>
                     <td>{item.quantity}</td>

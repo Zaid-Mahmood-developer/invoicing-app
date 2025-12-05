@@ -52,8 +52,10 @@ const MainDashboard = () => {
     const getValue = (path) =>
         path.split(".").reduce((obj, key) => obj?.[key], dashboardData);
 
-    const navigateFunc = () => {
-        navigate("/creditnote");
+    const navigateFunc = (invoiceId , data) => {
+        navigate("/creditnote" , {
+            state:{invoiceId , data}
+        });
     };
 
     return (
@@ -121,7 +123,7 @@ const MainDashboard = () => {
             {/* Sales Table */}
             <div className="salesBreakdown mt-4">
                 <h3 className="py-4" style={{ color: "#E0E7E9" }}>
-                    Today Sales Breakdown
+                   Sales Breakdown
                 </h3>
                 <div
                     className="table-responsive shadow-lg rounded-4 p-3 mt-4"
@@ -174,7 +176,7 @@ const MainDashboard = () => {
                                             </td>
 
                                             <td>
-                                                <button onClick={navigateFunc} className="btn btn-sm btn-success">
+                                                <button onClick={()=>navigateFunc(invoice._id, dashboardData)} className="btn btn-sm btn-success">
                                                     Credit Note
                                                 </button>
                                             </td>
